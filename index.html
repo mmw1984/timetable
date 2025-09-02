@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass 實時時間表 - 緊湊版</title>
+    <style>
+        :root {
+            --font-family-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            
+            /* Light Mode */
+            --bg-image-light: linear-gradient(135deg, #667eea 0%, #764ba2 40%, #f093fb 100%);
+            --text-color-light: #1d1d1f;
+            --text-color-secondary-light: #6e6e73;
+            --accent-color-light: #007aff;
+            --glass-bg-light: rgba(242, 242, 247, 0.9);
+            --glass-border-light: rgba(255, 255, 255, 0.6);
+            --shadow-color-light: rgba(0, 0, 0, 0.1);
+
+            /* Dark Mode */
+            --bg-image-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+            --text-color-dark: #f5f5f7;
+            --text-color-secondary-dark: #8e8e93;
+            --accent-color-dark: #0a84ff;
+            --glass-bg-dark: rgba(28, 28, 30, 0.9);
+            --glass-border-dark: rgba(60, 60, 60, 0.8);
+            --shadow-color-dark: rgba(0, 0, 0, 0.3);
+
+            /* Universal */
+            --radius-2xl: 1.5rem;
+            --radius-full: 9999px;
+            --shadow-md: 0 8px 25px var(--shadow-color);
+            --transition-fluid: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        body {
+            --bg-image: var(--bg-image-light);
+            --text-color: var(--text-color-light);
+            --text-color-secondary: var(--text-color-secondary-light);
+            --accent-color: var(--accent-color-light);
+            --glass-bg: var(--glass-bg-light);
+            --glass-border: var(--glass-border-light);
+            --shadow-color: var(--shadow-color-light);
+            
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: var(--bg-image);
+            background-attachment: fixed;
+            font-family: var(--font-family-system);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            overflow: hidden; /* 防止滾動 */
+        }
+
+        body.dark-mode {
+            --bg-image: var(--bg-image-dark);
+            --text-color: var(--text-color-dark);
+            --text-color-secondary: var(--text-color-secondary-dark);
+            --accent-color: var(--accent-color-dark);
+            --glass-bg: var(--glass-bg-dark);
+            --glass-border: var(--glass-border-dark);
+            --shadow-color: var(--shadow-color-dark);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition-fluid);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px var(--shadow-color);
+        }
+
+        /* 主容器 - 兩欄布局 */
+        .app-container {
+            height: 100vh;
+            padding: 0.5rem;
+            display: grid;
+            grid-template-areas: 
+                "header header"
+                "status schedule";
+            grid-template-rows: auto 1fr;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .app-header {
+            grid-area: header;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-section h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent-color), #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .datetime-display {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .current-date {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .current-time {
+            font-family: 'SF Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .theme-switcher {
+            display: flex;
+            background: var(--glass-bg);
+            border-radius: var(--radius-full);
+            padding: 0.2rem;
+            border: 1px solid var(--glass-border);
+            margin-left: 1rem;
+        }
+
+        .theme-switcher button {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-switcher button.active {
+            background-color: var(--accent-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+            fill: none;
+            stroke: currentColor;
+        }
+
+        /* 左側狀態區域 */
+        .status-section {
+            grid-area: status;
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr auto;
+            gap: 0.5rem;
+            overflow: hidden;
+        }
+
+        /* 當前狀態 */
+        .current-status {
+            padding: 0.75rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .period-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 0.3rem;
+            color: var(--accent-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .period-time {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            font-family: 'SF Mono', monospace;
+            margin-bottom: 0.3rem;
+        }
+
+        .subject-name {
+            font-size: 0.85rem;
+            color: var(--text-color);
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 倒計時 */
+        .countdown-section {
+            padding: 0.75rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .countdown-display {
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-family: 'SF Mono', monospace;
+            color: var(--accent-color);
+            margin-bottom: 0.3rem;
+            animation: pulse 2s infinite;
+        }
+
+        .countdown-label {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* 下一堂課 */
+        .next-period {
+            padding: 0.75rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .next-period h3 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .next-period-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 0.3rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .next-period-time {
+            font-family: 'SF Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        .next-subject {
+            font-size: 0.75rem;
+            color: var(--text-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 特殊提示 */
+        .special-notice {
+            padding: 0.75rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .notice-content {
+            background: linear-gradient(135deg, 
+                color-mix(in srgb, #ff9500 20%, transparent), 
+                color-mix(in srgb, #ff6b6b 15%, transparent));
+            border: 1px solid color-mix(in srgb, #ff9500 50%, transparent);
+            border-radius: var(--radius-2xl);
+            padding: 0.75rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text-color);
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 時間表 */
+        .schedule-section {
+            grid-area: schedule;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .schedule-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .day-indicator {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b6b);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            gap: 0.5rem;
+            height: calc(100% - 2.5rem);
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .schedule-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .schedule-grid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .schedule-grid::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: var(--radius-full);
+        }
+
+        .schedule-item {
+            display: grid;
+            grid-template-columns: 80px 60px 1fr;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: var(--radius-2xl);
+            background: color-mix(in srgb, var(--glass-bg) 50%, transparent);
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition-fluid);
+            text-align: left;
+            min-height: 0;
+        }
+
+        .schedule-item.current {
+            background: linear-gradient(135deg, 
+                color-mix(in srgb, var(--accent-color) 25%, transparent), 
+                color-mix(in srgb, #ff6b6b 20%, transparent));
+            border-color: var(--accent-color);
+            transform: scale(1.05);
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                box-shadow: 0 4px 15px color-mix(in srgb, var(--accent-color) 30%, transparent); 
+            }
+            50% { 
+                box-shadow: 0 8px 25px color-mix(in srgb, var(--accent-color) 50%, transparent); 
+            }
+        }
+
+        .item-time {
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+            font-size: 0.7rem;
+            color: var(--text-color);
+            line-height: 1.2;
+        }
+
+        .item-period {
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        .item-subject {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .schedule-item.break {
+            background: color-mix(in srgb, #ff9500 15%, transparent);
+            border-color: #ff9500;
+        }
+
+        .schedule-item.assembly {
+            background: color-mix(in srgb, #9b59b6 15%, transparent);
+            border-color: #9b59b6;
+        }
+
+        /* 響應式 - 保持兩欄布局 */
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-areas: 
+                    "header header"
+                    "status schedule";
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-areas: 
+                    "header"
+                    "status"
+                    "schedule";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr 1fr;
+            }
+            
+            .status-section {
+                grid-template-rows: auto auto;
+                grid-template-columns: 1fr 1fr;
+                grid-template-areas: 
+                    "current countdown"
+                    "next special";
+            }
+            
+            .current-status { grid-area: current; }
+            .countdown-section { grid-area: countdown; }
+            .next-period { grid-area: next; }
+            .special-notice { grid-area: special; }
+            
+            .brand-section h1 {
+                font-size: 1.2rem;
+            }
+            
+            .period-name {
+                font-size: 1.4rem;
+            }
+            
+            .countdown-display {
+                font-size: 1.6rem;
+            }
+            
+            .schedule-item {
+                grid-template-columns: 70px 50px 1fr;
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+            
+            .item-time {
+                font-size: 0.65rem;
+            }
+            
+            .item-period {
+                font-size: 0.65rem;
+            }
+            
+            .item-subject {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* 隱藏滾動條但保持功能 */
+        .schedule-grid::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .schedule-grid {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header glass-card">
+            <div class="brand-section">
+                <h1>實時時間表</h1>
+            </div>
+            
+            <div style="display: flex; align-items: center;">
+                <div class="datetime-display">
+                    <div class="current-date" id="current-date">載入中...</div>
+                    <div class="current-time" id="current-time">--:--:--</div>
+                </div>
+                
+                <div class="theme-switcher" id="theme-switcher">
+                    <button data-theme="light" aria-label="淺色">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button data-theme="dark" aria-label="深色">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button data-theme="system" aria-label="系統" class="active">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 左側狀態區域 -->
+        <div class="status-section">
+            <!-- 當前狀態 -->
+            <section class="current-status glass-card">
+                <h2 style="font-size: 0.8rem; margin: 0 0 0.4rem 0; color: var(--text-color);">當前狀態</h2>
+                <div class="period-name" id="current-period-name">載入中...</div>
+                <div class="period-time" id="current-period-time">--:-- - --:--</div>
+                <div class="subject-name" id="current-subject">正在載入...</div>
+            </section>
+
+            <!-- 倒計時 -->
+            <section class="countdown-section glass-card">
+                <h3 style="font-size: 0.8rem; margin: 0 0 0.4rem 0; color: var(--text-color);">倒計時</h3>
+                <div class="countdown-display" id="countdown-display">--:--:--</div>
+                <div class="countdown-label" id="countdown-label">載入中...</div>
+            </section>
+
+            <!-- 下一堂課 -->
+            <section class="next-period glass-card">
+                <h3>下一堂課</h3>
+                <div class="next-period-name" id="next-period-name">載入中...</div>
+                <div class="next-period-time" id="next-period-time">--:-- - --:--</div>
+                <div class="next-subject" id="next-subject">載入中...</div>
+            </section>
+
+            <!-- 特殊提示 -->
+            <section class="special-notice glass-card">
+                <div class="notice-content" id="special-notice">
+                    載入中...
+                </div>
+            </section>
+        </div>
+
+        <!-- 時間表 -->
+        <section class="schedule-section glass-card">
+            <div class="schedule-header">
+                <h2 class="schedule-title">今日時間表</h2>
+                <div class="day-indicator" id="day-indicator">載入中...</div>
+            </div>
+            <div class="schedule-grid" id="schedule-grid">
+                <!-- 動態內容 -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 完整時間表數據
+        const TIMETABLE_DATA = {
+            normal: {
+                preSchoolAssembly: { start: "08:15", end: "08:40", name: "Pre-School Assembly" },
+                periods: [
+                    { start: "08:40", end: "09:20" }, { start: "09:20", end: "10:00" },
+                    { start: "10:20", end: "11:00" }, { start: "11:00", end: "11:40" },
+                    { start: "12:50", end: "13:30" }, { start: "13:30", end: "14:10" },
+                    { start: "14:25", end: "15:05" }, { start: "15:05", end: "15:45" }
+                ],
+                breaks: [
+                    { start: "10:00", end: "10:20", name: "小息" },
+                    { start: "11:40", end: "12:50", name: "午餐" },
+                    { start: "14:10", end: "14:25", name: "小息" }
+                ]
+            },
+            specialA: {
+                periods: [
+                    { start: "08:30", end: "09:00" }, { start: "09:00", end: "09:30" },
+                    { start: "09:50", end: "10:20" }, { start: "10:20", end: "10:50" },
+                    { start: "11:05", end: "11:35" }, { start: "11:35", end: "12:05" },
+                    { start: "13:15", end: "13:45" }, { start: "13:45", end: "14:15" }
+                ],
+                breaks: [
+                    { start: "09:30", end: "09:50", name: "小息" },
+                    { start: "10:50", end: "11:05", name: "小息" },
+                    { start: "12:05", end: "13:10", name: "午餐" },
+                    { start: "13:10", end: "13:15", name: "點名" }
+                ]
+            },
+            specialB: {
+                periods: [
+                    { start: "08:30", end: "09:05" }, { start: "09:05", end: "09:40" },
+                    { start: "10:00", end: "10:35" }, { start: "10:35", end: "11:10" },
+                    { start: "11:25", end: "12:00" }, { start: "12:00", end: "12:35" },
+                    { start: "13:45", end: "14:20" }, { start: "14:20", end: "14:55" }
+                ],
+                breaks: [
+                    { start: "09:40", end: "10:00", name: "小息" },
+                    { start: "11:10", end: "11:25", name: "小息" },
+                    { start: "12:35", end: "13:40", name: "午餐" },
+                    { start: "13:40", end: "13:45", name: "點名" },
+                    { start: "14:55", end: "15:45", name: "集會" }
+                ]
+            }
+        };
+
+        const SUBJECT_SCHEDULE = {
+            1: { 1: "MATH YPC 405", 2: "MATH YPC 405", 3: "PHY WKW 511", 4: "PHY WKW 511", 5: "C&L CYM 405", 6: "ENG KKY 405", 7: "CHIN NKT 405", 8: "CHIN NKT 405" },
+            2: { 1: "LAC KKY 405", 2: "CS LPY 405", 3: "M2 YPC 405", 4: "M2 YPC 405", 5: "CHIN NKT 405", 6: "CHIN NKT 405", 7: "ICT WKC 316", 8: "ICT WKC 316" },
+            3: { 1: "PHY WKW 511", 2: "PHY WKW 511", 3: "PE CWH,KSM GD01", 4: "PE CWH,KSM GD01", 5: "CHIN NKT 405", 6: "MATH YPC 405", 7: "ENG KKY 405", 8: "ENG KKY 405" },
+            4: { 1: "HEPL TMC,KTT 405", 2: "HEPL TMC,KTT 405", 3: "ICT WKC 316", 4: "ICT WKC 316", 5: "ENG KKY 405", 6: "CHIN NKT 405", 7: "MATH YPC 405", 8: "MATH YPC 405" },
+            5: { 1: "CHIN NKT 405", 2: "CHIN NKT 405", 3: "C&L CYM 405", 4: "ENG KKY 405", 5: "M2 YPC 405", 6: "M2 YPC 405", 7: "CS LPY 405", 8: "CS LPY 405" },
+            6: { 1: "ICT WKC 316", 2: "ICT WKC 316", 3: "ENG KKY 405", 4: "ENG KKY 405", 5: "PHY WKW 511", 6: "PHY WKW 511", 7: "MATH YPC 405", 8: "MATH YPC 405" }
+        };
+
+        // 特殊日期規則
+        const SPECIAL_DATES = {
+            // 特殊時間表A (3-10/09/2025)
+            "2025-09-03": "A", "2025-09-04": "A", "2025-09-05": "A", 
+            "2025-09-08": "A", "2025-09-09": "A", "2025-09-10": "A",
+            // 其他特殊日期...
+            "2025-09-12": "B", // 開學禮
+        };
+
+        // 日期輪換
+        const DAY_ROTATION = {
+            "2025-09-03": 1, "2025-09-04": 2, "2025-09-05": 3,
+            "2025-09-08": 4, "2025-09-09": 5, "2025-09-10": 6,
+        };
+
+        class CompactTimetableApp {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.initTheme();
+                this.updateDateTime();
+                this.updateTimetable();
+                
+                setInterval(() => {
+                    this.updateDateTime();
+                    this.updateCountdown();
+                }, 1000);
+                
+                setInterval(() => {
+                    this.updateTimetable();
+                }, 60000);
+            }
+
+            initTheme() {
+                const themeSwitcher = document.getElementById('theme-switcher');
+                const themeButtons = themeSwitcher.querySelectorAll('button');
+                const body = document.body;
+
+                const applyTheme = (theme) => {
+                    if (theme === 'system') {
+                        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        body.classList.toggle('dark-mode', systemPrefersDark);
+                    } else {
+                        body.classList.toggle('dark-mode', theme === 'dark');
+                    }
+                };
+
+                const updateButtonState = (activeTheme) => {
+                    themeButtons.forEach(button => {
+                        button.classList.toggle('active', button.dataset.theme === activeTheme);
+                    });
+                };
+
+                const savedTheme = localStorage.getItem('theme') || 'system';
+                applyTheme(savedTheme);
+                updateButtonState(savedTheme);
+
+                themeButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const newTheme = button.dataset.theme;
+                        localStorage.setItem('theme', newTheme);
+                        applyTheme(newTheme);
+                        updateButtonState(newTheme);
+                    });
+                });
+            }
+
+            updateDateTime() {
+                const now = new Date();
+                document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', { 
+                    month: 'long', day: 'numeric', weekday: 'long' 
+                });
+                document.getElementById('current-time').textContent = now.toLocaleTimeString('zh-HK', { 
+                    hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+            }
+
+            updateTimetable() {
+                const today = new Date().toISOString().split('T')[0];
+                
+                // 檢查特殊日期
+                let timetableType = 'normal';
+                if (SPECIAL_DATES[today]) {
+                    timetableType = `special${SPECIAL_DATES[today]}`;
+                } else if (new Date().getDay() === 5) {
+                    timetableType = 'specialB'; // 所有星期五
+                }
+                
+                this.timetableType = timetableType;
+                this.dayCycle = DAY_ROTATION[today] || 1;
+                
+                this.updateCurrentPeriod();
+                this.updateScheduleDisplay();
+                this.updateSpecialNotice();
+            }
+
+            updateCurrentPeriod() {
+                const now = new Date();
+                const currentTimeStr = this.formatTimeForComparison(now);
+                const timetable = TIMETABLE_DATA[this.timetableType];
+                
+                this.currentPeriodInfo = this.findCurrentPeriod(currentTimeStr, timetable);
+                this.nextPeriodInfo = this.findNextPeriod(currentTimeStr, timetable);
+                
+                this.updateCurrentDisplay();
+                this.updateNextDisplay();
+            }
+
+            findCurrentPeriod(currentTimeStr, timetable) {
+                // 檢查課程
+                for (let i = 0; i < timetable.periods.length; i++) {
+                    const period = timetable.periods[i];
+                    if (this.isTimeInRange(currentTimeStr, period.start, period.end)) {
+                        const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[i + 1] || '課程';
+                        return {
+                            type: 'period',
+                            name: `第${i + 1}節`,
+                            start: period.start,
+                            end: period.end,
+                            subject: subject
+                        };
+                    }
+                }
+
+                // 檢查休息時間
+                for (const breakTime of timetable.breaks) {
+                    if (this.isTimeInRange(currentTimeStr, breakTime.start, breakTime.end)) {
+                        return {
+                            type: 'break',
+                            name: breakTime.name,
+                            start: breakTime.start,
+                            end: breakTime.end,
+                            subject: breakTime.name
+                        };
+                    }
+                }
+
+                return {
+                    type: 'free',
+                    name: '空堂時間',
+                    start: '',
+                    end: '',
+                    subject: '目前沒有課程'
+                };
+            }
+
+            findNextPeriod(currentTimeStr, timetable) {
+                const allTimeSlots = [];
+
+                timetable.periods.forEach((period, index) => {
+                    allTimeSlots.push({
+                        ...period,
+                        type: 'period',
+                        periodNumber: index + 1
+                    });
+                });
+
+                timetable.breaks.forEach(breakTime => {
+                    allTimeSlots.push({
+                        ...breakTime,
+                        type: 'break',
+                        periodNumber: 0
+                    });
+                });
+
+                allTimeSlots.sort((a, b) => a.start.localeCompare(b.start));
+
+                for (const slot of allTimeSlots) {
+                    if (slot.start > currentTimeStr) {
+                        let subject = slot.name || slot.type;
+                        if (slot.type === 'period') {
+                            subject = SUBJECT_SCHEDULE[this.dayCycle]?.[slot.periodNumber] || '課程';
+                        }
+
+                        return {
+                            type: slot.type,
+                            name: slot.type === 'period' ? `第${slot.periodNumber}節` : slot.name,
+                            start: slot.start,
+                            end: slot.end,
+                            subject: subject
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            updateCurrentDisplay() {
+                if (!this.currentPeriodInfo) return;
+
+                document.getElementById('current-period-name').textContent = this.currentPeriodInfo.name;
+                document.getElementById('current-period-time').textContent = 
+                    `${this.currentPeriodInfo.start} - ${this.currentPeriodInfo.end}`;
+                document.getElementById('current-subject').textContent = this.currentPeriodInfo.subject;
+            }
+
+            updateNextDisplay() {
+                if (this.nextPeriodInfo) {
+                    document.getElementById('next-period-name').textContent = this.nextPeriodInfo.name;
+                    document.getElementById('next-period-time').textContent = 
+                        `${this.nextPeriodInfo.start} - ${this.nextPeriodInfo.end}`;
+                    document.getElementById('next-subject').textContent = this.nextPeriodInfo.subject;
+                } else {
+                    document.getElementById('next-period-name').textContent = '今日課程已結束';
+                    document.getElementById('next-period-time').textContent = '';
+                    document.getElementById('next-subject').textContent = '';
+                }
+            }
+
+            updateCountdown() {
+                if (!this.currentPeriodInfo || !this.currentPeriodInfo.end) {
+                    document.getElementById('countdown-display').textContent = '--:--:--';
+                    document.getElementById('countdown-label').textContent = '';
+                    return;
+                }
+
+                const now = new Date();
+                const endTime = this.parseTimeToDate(this.currentPeriodInfo.end);
+                const timeDiff = endTime - now;
+
+                if (timeDiff <= 0) {
+                    document.getElementById('countdown-display').textContent = '00:00:00';
+                    document.getElementById('countdown-label').textContent = '時間已到';
+                    return;
+                }
+
+                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown-display').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                let label = '';
+                if (this.currentPeriodInfo.type === 'period') label = '下課倒計時';
+                else if (this.currentPeriodInfo.type === 'break') label = '小息結束倒計時';
+                
+                document.getElementById('countdown-label').textContent = label;
+            }
+
+            updateScheduleDisplay() {
+                const container = document.getElementById('schedule-grid');
+                const dayIndicator = document.getElementById('day-indicator');
+                
+                dayIndicator.textContent = `Day ${this.dayCycle}`;
+                
+                const timetable = TIMETABLE_DATA[this.timetableType];
+                const allItems = [];
+
+                // 添加課程
+                timetable.periods.forEach((period, index) => {
+                    const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[index + 1] || '課程';
+                    allItems.push({
+                        ...period,
+                        type: 'period',
+                        displayName: `第${index + 1}節`,
+                        subject: subject.split(' ')[0] // 只顯示科目名稱，不顯示老師和課室
+                    });
+                });
+
+                // 添加休息時間
+                timetable.breaks.forEach(breakTime => {
+                    allItems.push({
+                        ...breakTime,
+                        type: 'break',
+                        displayName: breakTime.name,
+                        subject: breakTime.name
+                    });
+                });
+
+                allItems.sort((a, b) => a.start.localeCompare(b.start));
+
+                container.innerHTML = '';
+
+                const now = new Date();
+                const currentTimeStr = this.formatTimeForComparison(now);
+
+                allItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `schedule-item ${item.type}`;
+                    
+                    if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
+                        itemElement.classList.add('current');
+                    }
+
+                    itemElement.innerHTML = `
+                        <div class="item-time">${item.start} - ${item.end}</div>
+                        <div class="item-period">${item.displayName}</div>
+                        <div class="item-subject">${item.subject}</div>
+                    `;
+
+                    container.appendChild(itemElement);
+                });
+            }
+
+            updateSpecialNotice() {
+                const noticeElement = document.getElementById('special-notice');
+                
+                let noticeText = '';
+                if (this.timetableType === 'specialA') {
+                    noticeText = '特殊時間表A - 學期初安排 (3-10/9)';
+                } else if (this.timetableType === 'specialB') {
+                    noticeText = '特殊時間表B';
+                } else {
+                    noticeText = '正常時間表';
+                }
+                
+                noticeElement.textContent = noticeText;
+            }
+
+            // 工具方法
+            isTimeInRange(current, start, end) {
+                return current >= start && current <= end;
+            }
+
+            formatTimeForComparison(date) {
+                return date.toTimeString().substring(0, 5);
+            }
+
+            parseTimeToDate(timeStr) {
+                const today = new Date();
+                const [hours, minutes] = timeStr.split(':');
+                today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                return today;
+            }
+        }
+
+        // 初始化應用
+        document.addEventListener('DOMContentLoaded', () => {
+            new CompactTimetableApp();
+        });
+    </script>
+</body>
+</html>

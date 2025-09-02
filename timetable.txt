@@ -1,0 +1,16 @@
+
+
+| Period | Day 1 | Day 2 | Day 3 | Day 4 | Day 5 | Day 6 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **8:15 - 8:40** | **Pre-School Assembly** |
+| **8:40 - 9:20** | MATH YPC 405 | LAC KKY 405 | PHY WKW 511 | HEPL TMC,KTT 405 | CHIN NKT 405 | ICT WKC 316 |
+| **9:20 - 10:00** | MATH YPC 405 | CS LPY 405 | PHY WKW 511 | HEPL TMC,KTT 405 | CHIN NKT 405 | ICT WKC 316 |
+| **10:00 - 10:20** | **Recess** |
+| **10:20 - 11:00** | PHY WKW 511 | M2 YPC 405 | PE CWH,KSM GD01 | ICT WKC 316 | C&L CYM 405 | ENG KKY 405 |
+| **11:00 - 11:40** | PHY WKW 511 | M2 YPC 405 | PE CWH,KSM GD01 | ICT WKC 316 | ENG KKY 405 | ENG KKY 405 |
+| **11:40 - 12:50** | **Lunch** |
+| **12:50 - 13:30** | C&L CYM 405 | CHIN NKT 405 | CHIN NKT 405 | ENG KKY 405 | M2 YPC 405 | PHY WKW 511 |
+| **13:30 - 14:10** | ENG KKY 405 | CHIN NKT 405 | MATH YPC 405 | CHIN NKT 405 | M2 YPC 405 | PHY WKW 511 |
+| **14:10 - 14:25** | **Recess** |
+| **14:25 - 15:05** | CHIN NKT 405 | ICT WKC 316 | ENG KKY 405 | MATH YPC 405 | CS LPY 405 | MATH YPC 405 |
+| **15:05 - 15:45** | CHIN NKT 405 | ICT WKC 316 | ENG KKY 405 | MATH YPC 405 | CS LPY 405 | MATH YPC 405 |
