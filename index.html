@@ -96,6 +96,12 @@
             overflow: hidden;
         }
 
+        .app-container.date-view {
+            grid-template-areas: 
+                "header header"
+                "date-selection schedule";
+        }
+
         /* Header */
         .app-header {
             grid-area: header;
@@ -472,6 +478,12 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto 1fr;
             }
+            
+            .app-container.date-view {
+                grid-template-areas: 
+                    "header header"
+                    "date-selection schedule";
+            }
         }
 
         @media (max-width: 768px) {
@@ -482,6 +494,14 @@
                     "schedule";
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr 1fr;
+            }
+            
+            .app-container.date-view {
+                grid-template-areas: 
+                    "header"
+                    "date-selection"
+                    "schedule";
+                grid-template-rows: auto auto 1fr;
             }
             
             .status-section {
@@ -526,6 +546,15 @@
             .item-subject {
                 font-size: 0.7rem;
             }
+
+            .date-input-container {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .date-selection-header h2 {
+                font-size: 1.2rem;
+            }
         }
 
         /* 隱藏滾動條但保持功能 */
@@ -542,12 +571,15 @@
         .date-selection-section {
             grid-area: date-selection;
             padding: 1.5rem;
-            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
         }
 
         .date-selection-header {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .date-selection-header h2 {
@@ -568,7 +600,7 @@
             align-items: center;
             justify-content: center;
             gap: 1rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             flex-wrap: wrap;
         }
 
@@ -941,17 +973,20 @@
                     btn.classList.toggle('active', btn.dataset.view === viewMode);
                 });
 
+                const appContainer = document.querySelector('.app-container');
                 const dateSelectionSection = document.getElementById('date-selection-section');
                 const statusSection = document.querySelector('.status-section');
 
                 if (viewMode === 'today') {
+                    appContainer.classList.remove('date-view');
                     dateSelectionSection.style.display = 'none';
                     statusSection.style.display = 'grid';
                     // Reset schedule title for today
                     document.querySelector('.schedule-title').textContent = '今日時間表';
                     this.updateTimetable(); // Update to today's schedule
                 } else {
-                    dateSelectionSection.style.display = 'block';
+                    appContainer.classList.add('date-view');
+                    dateSelectionSection.style.display = 'flex';
                     statusSection.style.display = 'none';
                     this.updateSelectedDateInfo();
                 }
