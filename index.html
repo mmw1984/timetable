@@ -96,6 +96,12 @@
             overflow: hidden;
         }
 
+        .app-container.date-view {
+            grid-template-areas: 
+                "header header"
+                "date-selection schedule";
+        }
+
         /* Header */
         .app-header {
             grid-area: header;
@@ -108,11 +114,43 @@
         .brand-section h1 {
             font-size: 1.5rem;
             font-weight: 700;
-            margin: 0;
+            margin: 0 0 0.5rem 0;
             background: linear-gradient(135deg, var(--accent-color), #ff6b6b);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        .view-switcher {
+            display: flex;
+            background: var(--glass-bg);
+            border-radius: var(--radius-full);
+            padding: 0.2rem;
+            border: 1px solid var(--glass-border);
+            gap: 0.2rem;
+        }
+
+        .view-btn {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .view-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .view-btn:hover:not(.active) {
+            background-color: var(--glass-border);
+            color: var(--text-color);
         }
 
         .datetime-display {
@@ -440,6 +478,12 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto 1fr;
             }
+            
+            .app-container.date-view {
+                grid-template-areas: 
+                    "header header"
+                    "date-selection schedule";
+            }
         }
 
         @media (max-width: 768px) {
@@ -450,6 +494,14 @@
                     "schedule";
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr 1fr;
+            }
+            
+            .app-container.date-view {
+                grid-template-areas: 
+                    "header"
+                    "date-selection"
+                    "schedule";
+                grid-template-rows: auto auto 1fr;
             }
             
             .status-section {
@@ -494,6 +546,15 @@
             .item-subject {
                 font-size: 0.7rem;
             }
+
+            .date-input-container {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .date-selection-header h2 {
+                font-size: 1.2rem;
+            }
         }
 
         /* 隱藏滾動條但保持功能 */
@@ -505,6 +566,121 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* 日期選擇區域 */
+        .date-selection-section {
+            grid-area: date-selection;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .date-selection-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .date-selection-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .date-selection-header p {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            margin: 0;
+        }
+
+        .date-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .date-picker {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-2xl);
+            background: var(--glass-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            font-family: var(--font-family-system);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .date-picker:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+
+        .view-date-btn, .back-today-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-2xl);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: var(--font-family-system);
+        }
+
+        .view-date-btn {
+            background: linear-gradient(135deg, var(--accent-color), #ff6b6b);
+            color: white;
+        }
+
+        .view-date-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px color-mix(in srgb, var(--accent-color) 40%, transparent);
+        }
+
+        .back-today-btn {
+            background: var(--glass-bg);
+            color: var(--text-color);
+            border: 1px solid var(--glass-border);
+        }
+
+        .back-today-btn:hover {
+            background: var(--glass-border);
+            transform: translateY(-1px);
+        }
+
+        .selected-date-info {
+            text-align: center;
+        }
+
+        .selected-date-display h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0 0 0.75rem 0;
+        }
+
+        .date-details {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .date-details span {
+            padding: 0.5rem 1rem;
+            background: color-mix(in srgb, var(--accent-color) 15%, transparent);
+            border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
     </style>
 </head>
 <body>
@@ -513,6 +689,10 @@
         <header class="app-header glass-card">
             <div class="brand-section">
                 <h1>實時時間表</h1>
+                <div class="view-switcher" id="view-switcher">
+                    <button id="today-view-btn" class="view-btn active" data-view="today">今日時間表</button>
+                    <button id="date-select-btn" class="view-btn" data-view="date-select">選擇日期</button>
+                </div>
             </div>
             
             <div style="display: flex; align-items: center;">
@@ -550,6 +730,29 @@
                 </div>
             </div>
         </header>
+
+        <!-- Date Selection Section -->
+        <section class="date-selection-section glass-card" id="date-selection-section" style="display: none;">
+            <div class="date-selection-header">
+                <h2>選擇查看日期</h2>
+                <p>選擇日期以查看該日的時間表安排</p>
+            </div>
+            <div class="date-input-container">
+                <input type="date" id="date-picker" class="date-picker">
+                <button id="view-selected-date" class="view-date-btn">查看時間表</button>
+                <button id="back-to-today" class="back-today-btn">返回今日</button>
+            </div>
+            <div class="selected-date-info" id="selected-date-info" style="display: none;">
+                <div class="selected-date-display">
+                    <h3 id="selected-date-title">選擇的日期</h3>
+                    <div class="date-details">
+                        <span id="selected-date-text"></span>
+                        <span id="selected-day-cycle"></span>
+                        <span id="selected-timetable-type"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- 左側狀態區域 -->
         <div class="status-section">
@@ -662,29 +865,76 @@
             "2025-09-12": "B", // 開學禮
         };
 
-        // 日期輪換
+        // 日期輪換 - 基礎日期設定
         const DAY_ROTATION = {
             "2025-09-03": 1, "2025-09-04": 2, "2025-09-05": 3,
             "2025-09-08": 4, "2025-09-09": 5, "2025-09-10": 6,
         };
 
+        // 計算任意日期的Day循環
+        function calculateDayCycle(dateStr) {
+            // 如果在預設的DAY_ROTATION中，直接返回
+            if (DAY_ROTATION[dateStr]) {
+                return DAY_ROTATION[dateStr];
+            }
+
+            const targetDate = new Date(dateStr + 'T00:00:00');
+            const targetDay = targetDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+            
+            // 週末不上課，返回null
+            if (targetDay === 0 || targetDay === 6) {
+                return null;
+            }
+
+            // 使用最後一個已知的DAY_ROTATION日期作為參考點
+            const referenceDate = new Date('2025-09-10T00:00:00'); // Day 6
+            const referenceDayCycle = 6;
+
+            // 計算目標日期與參考日期之間的工作日數量
+            let workingDays = 0;
+            const currentDate = new Date(referenceDate);
+            currentDate.setDate(currentDate.getDate() + 1); // 從參考日期的下一天開始
+
+            while (currentDate <= targetDate) {
+                const dayOfWeek = currentDate.getDay();
+                // 只計算工作日 (Monday=1 to Friday=5)
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    workingDays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // 計算Day循環 (1-6的循環)
+            const dayCycle = ((referenceDayCycle + workingDays - 1) % 6) + 1;
+            return dayCycle;
+        }
+
         class CompactTimetableApp {
             constructor() {
+                this.currentViewMode = 'today'; // 'today' or 'date-select'
+                this.selectedDate = null;
+                this.realTimeUpdateInterval = null;
                 this.init();
             }
 
             init() {
                 this.initTheme();
+                this.initViewSwitcher();
+                this.initDateSelection();
                 this.updateDateTime();
                 this.updateTimetable();
                 
-                setInterval(() => {
+                this.realTimeUpdateInterval = setInterval(() => {
                     this.updateDateTime();
-                    this.updateCountdown();
+                    if (this.currentViewMode === 'today') {
+                        this.updateCountdown();
+                    }
                 }, 1000);
                 
                 setInterval(() => {
-                    this.updateTimetable();
+                    if (this.currentViewMode === 'today') {
+                        this.updateTimetable();
+                    }
                 }, 60000);
             }
 
@@ -722,6 +972,138 @@
                 });
             }
 
+            initViewSwitcher() {
+                const viewButtons = document.querySelectorAll('.view-btn');
+                viewButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        this.switchView(button.dataset.view);
+                    });
+                });
+            }
+
+            initDateSelection() {
+                const datePicker = document.getElementById('date-picker');
+                const viewSelectedDateBtn = document.getElementById('view-selected-date');
+                const backToTodayBtn = document.getElementById('back-to-today');
+
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                datePicker.value = today;
+
+                viewSelectedDateBtn.addEventListener('click', () => {
+                    this.viewSelectedDate();
+                });
+
+                backToTodayBtn.addEventListener('click', () => {
+                    this.switchView('today');
+                });
+
+                datePicker.addEventListener('change', () => {
+                    this.updateSelectedDateInfo();
+                });
+            }
+
+            switchView(viewMode) {
+                this.currentViewMode = viewMode;
+                
+                const viewButtons = document.querySelectorAll('.view-btn');
+                viewButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.view === viewMode);
+                });
+
+                const appContainer = document.querySelector('.app-container');
+                const dateSelectionSection = document.getElementById('date-selection-section');
+                const statusSection = document.querySelector('.status-section');
+
+                if (viewMode === 'today') {
+                    appContainer.classList.remove('date-view');
+                    dateSelectionSection.style.display = 'none';
+                    statusSection.style.display = 'grid';
+                    // Reset schedule title for today
+                    document.querySelector('.schedule-title').textContent = '今日時間表';
+                    this.updateTimetable(); // Update to today's schedule
+                } else {
+                    appContainer.classList.add('date-view');
+                    dateSelectionSection.style.display = 'flex';
+                    statusSection.style.display = 'none';
+                    this.updateSelectedDateInfo();
+                }
+            }
+
+            viewSelectedDate() {
+                const datePicker = document.getElementById('date-picker');
+                const selectedDate = datePicker.value;
+                
+                if (!selectedDate) {
+                    alert('請選擇一個日期');
+                    return;
+                }
+
+                this.selectedDate = selectedDate;
+                this.updateTimetableForDate(selectedDate);
+                
+                // Show selected date info
+                document.getElementById('selected-date-info').style.display = 'block';
+            }
+
+            updateSelectedDateInfo() {
+                const datePicker = document.getElementById('date-picker');
+                const selectedDate = datePicker.value;
+                
+                if (!selectedDate) return;
+
+                const date = new Date(selectedDate + 'T00:00:00');
+                const timetableType = this.getTimetableTypeForDate(selectedDate);
+                const dayCycle = calculateDayCycle(selectedDate);
+
+                document.getElementById('selected-date-text').textContent = 
+                    date.toLocaleDateString('zh-HK', { 
+                        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+                    });
+                
+                document.getElementById('selected-day-cycle').textContent = 
+                    dayCycle ? `Day ${dayCycle}` : '無循環日';
+                
+                const typeText = this.getTimetableTypeText(timetableType);
+                document.getElementById('selected-timetable-type').textContent = typeText;
+            }
+
+            getTimetableTypeForDate(dateStr) {
+                if (SPECIAL_DATES[dateStr]) {
+                    return `special${SPECIAL_DATES[dateStr]}`;
+                }
+                
+                const date = new Date(dateStr + 'T00:00:00');
+                if (date.getDay() === 5) {
+                    return 'specialB';
+                }
+                
+                return 'normal';
+            }
+
+            getTimetableTypeText(timetableType) {
+                switch(timetableType) {
+                    case 'specialA': return '特殊時間表A';
+                    case 'specialB': return '特殊時間表B';
+                    case 'specialC': return '特殊時間表C';
+                    case 'specialD': return '特殊時間表D';
+                    case 'specialE': return '特殊時間表E';
+                    default: return '正常時間表';
+                }
+            }
+
+            updateTimetableForDate(dateStr) {
+                const timetableType = this.getTimetableTypeForDate(dateStr);
+                const dayCycle = calculateDayCycle(dateStr);
+                
+                this.timetableType = timetableType;
+                this.dayCycle = dayCycle;
+                
+                // Update schedule display for selected date
+                this.updateScheduleDisplayForDate(dateStr);
+                this.updateSpecialNotice();
+            }
+
             updateDateTime() {
                 const now = new Date();
                 document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', { 
@@ -744,7 +1126,7 @@
                 }
                 
                 this.timetableType = timetableType;
-                this.dayCycle = DAY_ROTATION[today] || 1;
+                this.dayCycle = calculateDayCycle(today);
                 
                 this.updateCurrentPeriod();
                 this.updateScheduleDisplay();
@@ -939,6 +1321,62 @@
                     if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
                         itemElement.classList.add('current');
                     }
+
+                    itemElement.innerHTML = `
+                        <div class="item-time">${item.start} - ${item.end}</div>
+                        <div class="item-period">${item.displayName}</div>
+                        <div class="item-subject">${item.subject}</div>
+                    `;
+
+                    container.appendChild(itemElement);
+                });
+            }
+
+            updateScheduleDisplayForDate(dateStr) {
+                const container = document.getElementById('schedule-grid');
+                const dayIndicator = document.getElementById('day-indicator');
+                const scheduleTitle = document.querySelector('.schedule-title');
+                
+                const date = new Date(dateStr + 'T00:00:00');
+                const formattedDate = date.toLocaleDateString('zh-HK', { 
+                    month: 'long', day: 'numeric', weekday: 'long' 
+                });
+                
+                dayIndicator.textContent = this.dayCycle ? `Day ${this.dayCycle}` : '無循環日';
+                scheduleTitle.textContent = `${formattedDate} 時間表`;
+                
+                const timetable = TIMETABLE_DATA[this.timetableType];
+                const allItems = [];
+
+                // 添加課程
+                timetable.periods.forEach((period, index) => {
+                    const subject = this.dayCycle ? (SUBJECT_SCHEDULE[this.dayCycle]?.[index + 1] || '課程') : '課程';
+                    allItems.push({
+                        ...period,
+                        type: 'period',
+                        displayName: `第${index + 1}節`,
+                        subject: subject.split(' ')[0] // 只顯示科目名稱，不顯示老師和課室
+                    });
+                });
+
+                // 添加休息時間
+                timetable.breaks.forEach(breakTime => {
+                    allItems.push({
+                        ...breakTime,
+                        type: 'break',
+                        displayName: breakTime.name,
+                        subject: breakTime.name
+                    });
+                });
+
+                allItems.sort((a, b) => a.start.localeCompare(b.start));
+
+                container.innerHTML = '';
+
+                // For historical dates, don't highlight current period
+                allItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `schedule-item ${item.type}`;
 
                     itemElement.innerHTML = `
                         <div class="item-time">${item.start} - ${item.end}</div>
