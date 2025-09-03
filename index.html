@@ -865,11 +865,49 @@
             "2025-09-12": "B", // 開學禮
         };
 
-        // 日期輪換
+        // 日期輪換 - 基礎日期設定
         const DAY_ROTATION = {
             "2025-09-03": 1, "2025-09-04": 2, "2025-09-05": 3,
             "2025-09-08": 4, "2025-09-09": 5, "2025-09-10": 6,
         };
+
+        // 計算任意日期的Day循環
+        function calculateDayCycle(dateStr) {
+            // 如果在預設的DAY_ROTATION中，直接返回
+            if (DAY_ROTATION[dateStr]) {
+                return DAY_ROTATION[dateStr];
+            }
+
+            const targetDate = new Date(dateStr + 'T00:00:00');
+            const targetDay = targetDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+            
+            // 週末不上課，返回null
+            if (targetDay === 0 || targetDay === 6) {
+                return null;
+            }
+
+            // 使用最後一個已知的DAY_ROTATION日期作為參考點
+            const referenceDate = new Date('2025-09-10T00:00:00'); // Day 6
+            const referenceDayCycle = 6;
+
+            // 計算目標日期與參考日期之間的工作日數量
+            let workingDays = 0;
+            const currentDate = new Date(referenceDate);
+            currentDate.setDate(currentDate.getDate() + 1); // 從參考日期的下一天開始
+
+            while (currentDate <= targetDate) {
+                const dayOfWeek = currentDate.getDay();
+                // 只計算工作日 (Monday=1 to Friday=5)
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    workingDays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // 計算Day循環 (1-6的循環)
+            const dayCycle = ((referenceDayCycle + workingDays - 1) % 6) + 1;
+            return dayCycle;
+        }
 
         class CompactTimetableApp {
             constructor() {
@@ -1016,7 +1054,7 @@
 
                 const date = new Date(selectedDate + 'T00:00:00');
                 const timetableType = this.getTimetableTypeForDate(selectedDate);
-                const dayCycle = DAY_ROTATION[selectedDate];
+                const dayCycle = calculateDayCycle(selectedDate);
 
                 document.getElementById('selected-date-text').textContent = 
                     date.toLocaleDateString('zh-HK', { 
@@ -1056,7 +1094,7 @@
 
             updateTimetableForDate(dateStr) {
                 const timetableType = this.getTimetableTypeForDate(dateStr);
-                const dayCycle = DAY_ROTATION[dateStr] || 1;
+                const dayCycle = calculateDayCycle(dateStr);
                 
                 this.timetableType = timetableType;
                 this.dayCycle = dayCycle;
@@ -1088,7 +1126,7 @@
                 }
                 
                 this.timetableType = timetableType;
-                this.dayCycle = DAY_ROTATION[today] || 1;
+                this.dayCycle = calculateDayCycle(today);
                 
                 this.updateCurrentPeriod();
                 this.updateScheduleDisplay();
