@@ -98,6 +98,47 @@
             border-color: #48484a;
         }
 
+        body.dark-mode .item-time {
+            background: color-mix(in srgb, var(--accent-color-dark) 15%, #1c1c1e);
+            border-color: color-mix(in srgb, var(--accent-color-dark) 30%, transparent);
+            color: var(--text-color-dark);
+        }
+
+        body.dark-mode .item-period {
+            background: color-mix(in srgb, var(--accent-color-dark) 20%, #1c1c1e);
+            border-color: color-mix(in srgb, var(--accent-color-dark) 40%, transparent);
+            color: var(--text-color-dark);
+        }
+
+        body.dark-mode .item-subject {
+            background: color-mix(in srgb, var(--text-color-secondary-dark) 8%, #1c1c1e);
+            color: var(--text-color-dark);
+        }
+
+        body.dark-mode .schedule-item.break .item-time,
+        body.dark-mode .schedule-item.break .item-period {
+            background: color-mix(in srgb, #ff9f0a 25%, #1c1c1e);
+            border-color: color-mix(in srgb, #ff9f0a 50%, transparent);
+            color: #ffb84d;
+        }
+
+        body.dark-mode .schedule-item.break .item-subject {
+            background: color-mix(in srgb, #ff9f0a 15%, #1c1c1e);
+            color: #ffb84d;
+        }
+
+        body.dark-mode .schedule-item.assembly .item-time,
+        body.dark-mode .schedule-item.assembly .item-period {
+            background: color-mix(in srgb, #5856d6 25%, #1c1c1e);
+            border-color: color-mix(in srgb, #5856d6 50%, transparent);
+            color: #7b7ae8;
+        }
+
+        body.dark-mode .schedule-item.assembly .item-subject {
+            background: color-mix(in srgb, #5856d6 15%, #1c1c1e);
+            color: #7b7ae8;
+        }
+
         .glass-card:hover {
             transform: translateY(-1px);
             box-shadow: var(--shadow-lg);
@@ -454,16 +495,15 @@
         }
 
         .schedule-item {
-            display: grid;
-            grid-template-columns: 90px 70px 1fr;
-            gap: 1rem;
+            display: flex;
             align-items: center;
-            padding: 1rem;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
             border-radius: var(--radius-xl);
             background: #ffffff;
             border: 1px solid #e5e5e7;
             transition: all var(--transition-smooth);
-            min-height: 0;
+            min-height: 3rem;
         }
 
         .schedule-item.current {
@@ -491,38 +531,65 @@
             font-size: 0.75rem;
             color: var(--text-color);
             line-height: 1.3;
-            text-align: left;
+            text-align: center;
+            min-width: 5rem;
+            flex-shrink: 0;
+            background: color-mix(in srgb, var(--accent-color) 8%, transparent);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid color-mix(in srgb, var(--accent-color) 20%, transparent);
         }
 
         .item-period {
             font-weight: 700;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-color);
             text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-width: 3rem;
+            flex-shrink: 0;
+            background: color-mix(in srgb, var(--accent-color) 15%, transparent);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
 
         .item-subject {
-            font-size: 0.8rem;
-            color: var(--text-color-secondary);
-            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            font-weight: 600;
             line-height: 1.3;
+            flex: 1;
+            text-align: left;
+            padding: 0.25rem 0.5rem;
+            background: color-mix(in srgb, var(--text-color-secondary) 5%, transparent);
+            border-radius: var(--radius-lg);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            text-align: left;
         }
 
-        .schedule-item.break {
-            background: color-mix(in srgb, #ff9f0a 12%, transparent);
-            border-color: color-mix(in srgb, #ff9f0a 30%, transparent);
+        .schedule-item.break .item-time,
+        .schedule-item.break .item-period {
+            background: color-mix(in srgb, #ff9f0a 20%, transparent);
+            border-color: color-mix(in srgb, #ff9f0a 40%, transparent);
+            color: #8b4513;
         }
 
-        .schedule-item.assembly {
-            background: color-mix(in srgb, #5856d6 12%, transparent);
-            border-color: color-mix(in srgb, #5856d6 30%, transparent);
+        .schedule-item.break .item-subject {
+            background: color-mix(in srgb, #ff9f0a 10%, transparent);
+            color: #8b4513;
+        }
+
+        .schedule-item.assembly .item-time,
+        .schedule-item.assembly .item-period {
+            background: color-mix(in srgb, #5856d6 20%, transparent);
+            border-color: color-mix(in srgb, #5856d6 40%, transparent);
+            color: #4c4c9d;
+        }
+
+        .schedule-item.assembly .item-subject {
+            background: color-mix(in srgb, #5856d6 10%, transparent);
+            color: #4c4c9d;
         }
 
         /* 響應式設計 - Apple風格 */
@@ -602,21 +669,26 @@
             }
             
             .schedule-item {
-                grid-template-columns: 80px 60px 1fr;
-                gap: 0.875rem;
-                padding: 0.875rem;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                min-height: 2.5rem;
             }
 
             .item-time {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
+                min-width: 4.5rem;
+                padding: 0.2rem 0.4rem;
             }
 
             .item-period {
                 font-size: 0.7rem;
+                min-width: 2.5rem;
+                padding: 0.2rem 0.4rem;
             }
 
             .item-subject {
                 font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
             }
 
             .app-header {
