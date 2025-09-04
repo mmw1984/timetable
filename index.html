@@ -888,6 +888,8 @@
             <div class="date-input-container">
                 <input type="date" id="date-picker" class="date-picker">
                 <button id="view-selected-date" class="view-date-btn">查看時間表</button>
+                <button id="prev-day-btn" class="back-today-btn">上一個 Day</button>
+                <button id="next-day-btn" class="back-today-btn">下一個 Day</button>
                 <button id="back-to-today" class="back-today-btn">返回今日</button>
             </div>
             <div class="selected-date-info" id="selected-date-info" style="display: none;">
@@ -1132,6 +1134,8 @@
             initDateSelection() {
                 const datePicker = document.getElementById('date-picker');
                 const viewSelectedDateBtn = document.getElementById('view-selected-date');
+                const prevDayBtn = document.getElementById('prev-day-btn');
+                const nextDayBtn = document.getElementById('next-day-btn');
                 const backToTodayBtn = document.getElementById('back-to-today');
 
                 // Set default date to today
@@ -1140,6 +1144,14 @@
 
                 viewSelectedDateBtn.addEventListener('click', () => {
                     this.viewSelectedDate();
+                });
+
+                prevDayBtn.addEventListener('click', () => {
+                    this.goToPrevDay();
+                });
+
+                nextDayBtn.addEventListener('click', () => {
+                    this.goToNextDay();
                 });
 
                 backToTodayBtn.addEventListener('click', () => {
@@ -1192,6 +1204,72 @@
                 
                 // Show selected date info
                 document.getElementById('selected-date-info').style.display = 'block';
+            }
+
+            goToPrevDay() {
+                const datePicker = document.getElementById('date-picker');
+                const currentDate = datePicker.value;
+                
+                if (!currentDate) {
+                    // If no date is selected, start from today
+                    const today = new Date().toISOString().split('T')[0];
+                    datePicker.value = today;
+                    this.updateSelectedDateInfo();
+                    return;
+                }
+
+                // Get the current date and subtract one day
+                const date = new Date(currentDate + 'T00:00:00');
+                date.setDate(date.getDate() - 1);
+                
+                // Format the new date as YYYY-MM-DD
+                const prevDate = date.toISOString().split('T')[0];
+                
+                // Update the date picker
+                datePicker.value = prevDate;
+                
+                // Update the selected date info
+                this.updateSelectedDateInfo();
+                
+                // If the date view is already showing a date, automatically update the timetable
+                if (this.selectedDate) {
+                    this.selectedDate = prevDate;
+                    this.updateTimetableForDate(prevDate);
+                    document.getElementById('selected-date-info').style.display = 'block';
+                }
+            }
+
+            goToNextDay() {
+                const datePicker = document.getElementById('date-picker');
+                const currentDate = datePicker.value;
+                
+                if (!currentDate) {
+                    // If no date is selected, start from today
+                    const today = new Date().toISOString().split('T')[0];
+                    datePicker.value = today;
+                    this.updateSelectedDateInfo();
+                    return;
+                }
+
+                // Get the current date and add one day
+                const date = new Date(currentDate + 'T00:00:00');
+                date.setDate(date.getDate() + 1);
+                
+                // Format the new date as YYYY-MM-DD
+                const nextDate = date.toISOString().split('T')[0];
+                
+                // Update the date picker
+                datePicker.value = nextDate;
+                
+                // Update the selected date info
+                this.updateSelectedDateInfo();
+                
+                // If the date view is already showing a date, automatically update the timetable
+                if (this.selectedDate) {
+                    this.selectedDate = nextDate;
+                    this.updateTimetableForDate(nextDate);
+                    document.getElementById('selected-date-info').style.display = 'block';
+                }
             }
 
             updateSelectedDateInfo() {
