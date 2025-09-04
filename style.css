@@ -21,13 +21,12 @@ body {
 
 /* 頁首樣式 */
 header {
-    background: rgba(255, 255, 255, 0.95);
+    background: #ffffff;
     border-radius: 15px;
     padding: 30px;
     margin-bottom: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
     text-align: center;
 }
 
@@ -73,12 +72,11 @@ main {
 }
 
 .status-card, .countdown-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: #ffffff;
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
 }
 
 .status-card h2, .countdown-card h3 {
@@ -139,12 +137,11 @@ main {
 
 /* 今日時間表 */
 .today-schedule {
-    background: rgba(255, 255, 255, 0.95);
+    background: #ffffff;
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
     margin-bottom: 20px;
 }
 
@@ -234,12 +231,11 @@ main {
 
 /* 下一堂課 */
 .next-period {
-    background: rgba(255, 255, 255, 0.95);
+    background: #ffffff;
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
     margin-bottom: 20px;
 }
 
@@ -275,12 +271,11 @@ main {
 
 /* 特殊時間表指示器 */
 .special-indicator {
-    background: rgba(255, 255, 255, 0.95);
+    background: #ffffff;
     border-radius: 15px;
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
     margin-bottom: 20px;
 }
 
