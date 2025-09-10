@@ -665,6 +665,10 @@
                 this.selectedDate = null;
                 this.theme = localStorage.getItem('theme') || 'light';
                 this.realTimeUpdateInterval = null;
+                this.timetableUpdateInterval = null;
+                this.isPageVisible = true;
+                this.lastUpdateTime = Date.now();
+                this.animationFrameId = null;
                 this.init();
             }
 
@@ -673,23 +677,33 @@
                 this.initViewSwitcher();
                 this.initDateSelection();
                 this.initNavigationButtons(); // Add this new method
+                this.initPageVisibility(); // Add Page Visibility API support
+                this.initMobileSupport(); // Add mobile-specific support
                 this.updateDateTime();
                 this.updateTimetable();
                 
-                // Real-time updates
-                this.realTimeUpdateInterval = setInterval(() => {
-                    this.updateDateTime();
-                    if (this.currentViewMode === 'today') {
-                        this.updateCountdown();
-                    }
-                }, 1000);
+                // Start real-time updates with mobile fallback
+                this.startRealTimeUpdates();
                 
                 // Update timetable every minute
-                setInterval(() => {
-                    if (this.currentViewMode === 'today') {
+                this.timetableUpdateInterval = setInterval(() => {
+                    if (this.currentViewMode === 'today' && this.isPageVisible) {
                         this.updateTimetable();
                     }
                 }, 60000);
+                
+                // Clean up on page unload
+                window.addEventListener('beforeunload', () => {
+                    this.cleanup();
+                });
+            }
+
+            cleanup() {
+                this.stopRealTimeUpdates();
+                if (this.timetableUpdateInterval) {
+                    clearInterval(this.timetableUpdateInterval);
+                    this.timetableUpdateInterval = null;
+                }
             }
 
             initTheme() {
@@ -716,6 +730,127 @@
                         this.switchView(button.dataset.view);
                     });
                 });
+            }
+
+            initPageVisibility() {
+                // Page Visibility API to handle iPad Safari timer throttling
+                let visibilityChangeEvent = 'visibilitychange';
+                let hiddenProperty = 'hidden';
+
+                // Check for vendor prefixes (especially for older Safari)
+                if (typeof document.hidden !== 'undefined') {
+                    hiddenProperty = 'hidden';
+                    visibilityChangeEvent = 'visibilitychange';
+                } else if (typeof document.webkitHidden !== 'undefined') {
+                    hiddenProperty = 'webkitHidden';
+                    visibilityChangeEvent = 'webkitvisibilitychange';
+                } else if (typeof document.mozHidden !== 'undefined') {
+                    hiddenProperty = 'mozHidden';
+                    visibilityChangeEvent = 'mozvisibilitychange';
+                } else if (typeof document.msHidden !== 'undefined') {
+                    hiddenProperty = 'msHidden';
+                    visibilityChangeEvent = 'msvisibilitychange';
+                }
+
+                const handleVisibilityChange = () => {
+                    const wasVisible = this.isPageVisible;
+                    this.isPageVisible = !document[hiddenProperty];
+                    
+                    console.log('[Page Visibility]', this.isPageVisible ? 'visible' : 'hidden');
+                    
+                    if (this.isPageVisible && !wasVisible) {
+                        // Page became visible - restart timers and update immediately
+                        console.log('[Page Visibility] Page became visible, restarting timers');
+                        this.stopRealTimeUpdates();
+                        this.startRealTimeUpdates();
+                        this.updateDateTime();
+                        if (this.currentViewMode === 'today') {
+                            this.updateTimetable();
+                        }
+                    } else if (!this.isPageVisible && wasVisible) {
+                        // Page became hidden - stop timers to save battery
+                        console.log('[Page Visibility] Page became hidden, stopping timers');
+                        this.stopRealTimeUpdates();
+                    }
+                };
+
+                document.addEventListener(visibilityChangeEvent, handleVisibilityChange, false);
+            }
+
+            initMobileSupport() {
+                // Add touch events to keep page active on mobile devices
+                const touchEvents = ['touchstart', 'touchmove', 'touchend'];
+                touchEvents.forEach(eventType => {
+                    document.addEventListener(eventType, () => {
+                        this.lastUpdateTime = Date.now();
+                        if (this.isPageVisible && !this.realTimeUpdateInterval && !this.animationFrameId) {
+                            console.log('[Mobile Support] Touch detected, restarting timers');
+                            this.startRealTimeUpdates();
+                        }
+                    }, { passive: true });
+                });
+
+                // Check if timers are working every 5 seconds
+                setInterval(() => {
+                    if (this.isPageVisible && this.currentViewMode === 'today') {
+                        const now = Date.now();
+                        if (now - this.lastUpdateTime > 5000) {
+                            console.log('[Mobile Support] Timers appear frozen, restarting');
+                            this.stopRealTimeUpdates();
+                            this.startRealTimeUpdates();
+                        }
+                    }
+                }, 5000);
+            }
+
+            startRealTimeUpdates() {
+                if (!this.isPageVisible) return;
+                
+                // Stop any existing timers first
+                this.stopRealTimeUpdates();
+                
+                // Primary method: setInterval for consistent timing
+                this.realTimeUpdateInterval = setInterval(() => {
+                    if (this.isPageVisible) {
+                        this.lastUpdateTime = Date.now();
+                        this.updateDateTime();
+                        if (this.currentViewMode === 'today') {
+                            this.updateCountdown();
+                        }
+                    }
+                }, 1000);
+
+                // Fallback method: requestAnimationFrame for mobile browsers
+                const animationUpdate = () => {
+                    if (this.isPageVisible) {
+                        const now = Date.now();
+                        if (now - this.lastUpdateTime >= 1000) {
+                            this.lastUpdateTime = now;
+                            this.updateDateTime();
+                            if (this.currentViewMode === 'today') {
+                                this.updateCountdown();
+                            }
+                        }
+                        this.animationFrameId = requestAnimationFrame(animationUpdate);
+                    }
+                };
+                
+                // Use requestAnimationFrame as backup on mobile
+                if (/iPad|iPhone|iPod|Android/i.test(navigator.userAgent)) {
+                    console.log('[Mobile Support] Using requestAnimationFrame fallback for mobile device');
+                    this.animationFrameId = requestAnimationFrame(animationUpdate);
+                }
+            }
+
+            stopRealTimeUpdates() {
+                if (this.realTimeUpdateInterval) {
+                    clearInterval(this.realTimeUpdateInterval);
+                    this.realTimeUpdateInterval = null;
+                }
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
             }
 
             initNavigationButtons() {
@@ -887,6 +1022,7 @@
 
             updateDateTime() {
                 const now = new Date();
+                this.lastUpdateTime = Date.now(); // Track last update for mobile timer monitoring
                 document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', { 
                     month: 'long', day: 'numeric', weekday: 'long' 
                 });
