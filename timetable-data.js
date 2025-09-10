@@ -6,7 +6,7 @@ window.TIMETABLE_DATA = {
         preSchoolAssembly: {
             start: "08:15",
             end: "08:40",
-            name: "Pre-School Assembly"
+            name: "早會"
         },
         
         // 正常课程时间
@@ -24,7 +24,8 @@ window.TIMETABLE_DATA = {
         // 小息和午餐时间
         breaks: [
             { start: "10:00", end: "10:20", name: "小息" },
-            { start: "11:40", end: "12:50", name: "午餐" },
+            { start: "11:40", end: "12:45", name: "午餐" },
+            { start: "12:45", end: "12:50", name: "點名" }
             { start: "14:10", end: "14:25", name: "小息" }
         ]
     },
@@ -271,4 +272,5 @@ function getTimetableType(dateStr) {
 // 獲取當天的Day週期
 function getDayCycle(dateStr) {
     return DAY_ROTATION[dateStr] || null;
+
 }
