@@ -1123,11 +1123,32 @@
                     const period = timetable.periods[i];
                     if (this.isTimeInRange(currentTimeStr, period.start, period.end)) {
                         const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[i + 1] || '課程';
+                        
+                        // Check for consecutive periods with the same subject
+                        let endTime = period.end;
+                        let lastPeriod = i + 1;
+                        
+                        // Look ahead for consecutive periods with same subject
+                        for (let j = i + 1; j < timetable.periods.length; j++) {
+                            const nextSubject = SUBJECT_SCHEDULE[this.dayCycle]?.[j + 1] || '課程';
+                            if (nextSubject === subject) {
+                                // Found consecutive period with same subject
+                                endTime = timetable.periods[j].end;
+                                lastPeriod = j + 1;
+                            } else {
+                                // Different subject, stop looking
+                                break;
+                            }
+                        }
+                        
+                        // Create period name to reflect consecutive periods if applicable
+                        const periodName = lastPeriod > i + 1 ? `第${i + 1}-${lastPeriod}節` : `第${i + 1}節`;
+                        
                         return {
                             type: 'period',
-                            name: `第${i + 1}節`,
+                            name: periodName,
                             start: period.start,
-                            end: period.end,
+                            end: endTime, // Extended end time for consecutive same subjects
                             subject: subject // Show full subject information
                         };
                     }
