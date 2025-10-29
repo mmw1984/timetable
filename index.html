@@ -41,6 +41,7 @@
             --padding-sm: 12px;
             --padding-md: 16px;
             --padding-lg: 24px;
+            --gap-xs: 4px;
             --gap-sm: 8px;
             --gap-md: 16px;
             --gap-lg: 24px;
@@ -452,6 +453,16 @@
             font-weight: 500;
         }
 
+        .schedule-empty {
+            text-align: center;
+            padding: var(--padding-lg);
+            color: var(--text-color-secondary);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-color);
+            font-weight: 500;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -858,14 +869,9 @@
                 const prevDayBtn = document.getElementById('prev-day-btn');
                 const nextDayBtn = document.getElementById('next-day-btn');
                 
-                console.log('Initializing navigation buttons...');
-                console.log('prevDayBtn found:', !!prevDayBtn);
-                console.log('nextDayBtn found:', !!nextDayBtn);
-                
                 if (prevDayBtn) {
                     prevDayBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        console.log('Prev day button clicked');
                         this.goToPrevDay();
                     });
                 } else {
@@ -875,7 +881,6 @@
                 if (nextDayBtn) {
                     nextDayBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        console.log('Next day button clicked');
                         this.goToNextDay();
                     });
                 } else {
@@ -890,7 +895,7 @@
     
                 // 只在初次載入時設值，不在每次切換 viewMode 時重設
                 if (datePicker && !datePicker.value) {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = this.getTodayDateString();
                     datePicker.value = today;
                 }
 
@@ -939,7 +944,6 @@
             viewSelectedDate() {
                 const datePicker = document.getElementById('date-picker');
                 const selectedDate = datePicker.value;
-                console.log('[viewSelectedDate] selectedDate:', selectedDate);
                 
                 if (!selectedDate) {
                     alert('請選擇一個日期');
@@ -948,7 +952,6 @@
     
                 this.selectedDate = selectedDate;
                 this.updateTimetableForDate(selectedDate);
-                console.log('[viewSelectedDate] timetableType:', this.timetableType, 'dayCycle:', this.dayCycle);
                 
                 document.getElementById('selected-date-info').style.display = 'block';
             }
@@ -959,15 +962,19 @@
                     this.switchView('date-select');
                 }
                 const datePicker = document.getElementById('date-picker');
-                let currentDate = datePicker.value || new Date().toISOString().split('T')[0];
+                const fallbackToday = this.getTodayDateString();
+                let currentDate = datePicker.value || fallbackToday;
                 // Get previous day
                 const date = new Date(currentDate + 'T00:00:00');
+                if (Number.isNaN(date.getTime())) {
+                    return;
+                }
                 date.setDate(date.getDate() - 1);
                 // Keep going back until we find a weekday
-                while (date.getDay() === 0 || date.getDay() === 6) {
+                while (this.isWeekendDate(date)) {
                     date.setDate(date.getDate() - 1);
                 }
-                const prevDate = date.toISOString().split('T')[0];
+                const prevDate = this.formatDateToISO(date);
                 datePicker.value = prevDate;
                 this.selectedDate = prevDate;
                 this.viewSelectedDate();
@@ -981,19 +988,20 @@
                 }
                 const datePicker = document.getElementById('date-picker');
                 // 只以 datePicker.value 為基準
-                let baseDate = datePicker.value || new Date().toISOString().split('T')[0];
+                let baseDate = datePicker.value || this.getTodayDateString();
                 let dateArr = baseDate.split('-');
                 let dateObj = new Date(Number(dateArr[0]), Number(dateArr[1]) - 1, Number(dateArr[2]));
+                if (Number.isNaN(dateObj.getTime())) {
+                    return;
+                }
                 dateObj.setDate(dateObj.getDate() + 1);
                 // 跳過週末
-                while (dateObj.getDay() === 0 || dateObj.getDay() === 6) {
+                while (this.isWeekendDate(dateObj)) {
                     dateObj.setDate(dateObj.getDate() + 1);
                 }
-                const nextDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-                console.log('[goToNextDay] baseDate:', baseDate, 'nextDate:', nextDate, 'dateObj:', dateObj);
+                const nextDate = this.formatDateToISO(dateObj);
                 datePicker.value = nextDate;
                 this.selectedDate = nextDate;
-                console.log('[goToNextDay] datePicker.value:', datePicker.value, 'selectedDate:', this.selectedDate);
                 this.viewSelectedDate();
                 this.updateSelectedDateInfo();
             }
@@ -1032,7 +1040,7 @@
             }
 
             updateTimetable() {
-                const today = new Date().toISOString().split('T')[0];
+                const today = this.getTodayDateString();
                 
                 this.timetableType = this.getTimetableTypeForDate(today);
                 this.dayCycle = this.calculateDayCycle(today);
@@ -1054,12 +1062,16 @@
                 if (SPECIAL_DATES[dateStr]) {
                     return `special${SPECIAL_DATES[dateStr]}`;
                 }
-                
+
+                if (this.isNonSchoolDay(dateStr)) {
+                    return 'none';
+                }
+
                 const date = new Date(dateStr + 'T00:00:00');
-                if (date.getDay() === 5) {
+                if (!Number.isNaN(date.getTime()) && date.getDay() === 5) {
                     return 'specialB';
                 }
-                
+
                 return 'normal';
             }
 
@@ -1070,51 +1082,72 @@
                     case 'specialC': return '特殊時間表C';
                     case 'specialD': return '特殊時間表D';
                     case 'specialE': return '特殊時間表E';
+                    case 'none': return '非上課日';
                     default: return '正常時間表';
                 }
             }
 
             calculateDayCycle(dateStr) {
-                if (DAY_ROTATION[dateStr]) {
-                    return DAY_ROTATION[dateStr];
+                return DAY_ROTATION[dateStr] || null;
+            }
+
+            isNonSchoolDay(dateStr) {
+                const date = new Date(dateStr + 'T00:00:00');
+                if (Number.isNaN(date.getTime())) {
+                    return false;
                 }
 
-                const targetDate = new Date(dateStr + 'T00:00:00');
-                const targetDay = targetDate.getDay();
-                
-                if (targetDay === 0 || targetDay === 6) {
-                    return null;
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    return true;
                 }
 
-                const referenceDate = new Date('2025-09-10T00:00:00');
-                const referenceDayCycle = 6;
-
-                let workingDays = 0;
-                const currentDate = new Date(referenceDate);
-                currentDate.setDate(currentDate.getDate() + 1);
-
-                while (currentDate <= targetDate) {
-                    const dayOfWeek = currentDate.getDay();
-                    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                        workingDays++;
-                    }
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-
-                const dayCycle = ((referenceDayCycle + workingDays - 1) % 6) + 1;
-                return dayCycle;
+                const hasRotation = Boolean(DAY_ROTATION[dateStr]);
+                const hasSpecialTimetable = Boolean(SPECIAL_DATES[dateStr]);
+                return !hasRotation && !hasSpecialTimetable;
             }
 
             updateCurrentPeriod() {
+                if (this.timetableType === 'none') {
+                    this.currentPeriodInfo = {
+                        type: 'none',
+                        name: '今日沒有課程',
+                        start: '',
+                        end: '',
+                        subject: '非上課日'
+                    };
+                    this.nextPeriodInfo = null;
+                    this.updateCurrentDisplay();
+                    this.updateNextDisplay();
+                    this.updateCountdown();
+                    return;
+                }
+
                 const now = new Date();
                 const currentTimeStr = this.formatTimeForComparison(now);
                 const timetable = TIMETABLE_DATA[this.timetableType];
+                
+                if (!timetable) {
+                    this.currentPeriodInfo = {
+                        type: 'free',
+                        name: '時間表資料缺失',
+                        start: '',
+                        end: '',
+                        subject: '請稍後再試'
+                    };
+                    this.nextPeriodInfo = null;
+                    this.updateCurrentDisplay();
+                    this.updateNextDisplay();
+                    this.updateCountdown();
+                    return;
+                }
                 
                 this.currentPeriodInfo = this.findCurrentPeriod(currentTimeStr, timetable);
                 this.nextPeriodInfo = this.findNextPeriod(currentTimeStr, timetable);
                 
                 this.updateCurrentDisplay();
                 this.updateNextDisplay();
+                this.updateCountdown();
             }
 
             findCurrentPeriod(currentTimeStr, timetable) {
@@ -1225,12 +1258,21 @@
                 if (!this.currentPeriodInfo) return;
 
                 document.getElementById('current-period-name').textContent = this.currentPeriodInfo.name;
-                document.getElementById('current-period-time').textContent = 
-                    `${this.currentPeriodInfo.start} - ${this.currentPeriodInfo.end}`;
+                const periodTime = (this.currentPeriodInfo.start && this.currentPeriodInfo.end)
+                    ? `${this.currentPeriodInfo.start} - ${this.currentPeriodInfo.end}`
+                    : '--:-- - --:--';
+                document.getElementById('current-period-time').textContent = periodTime;
                 document.getElementById('current-subject').textContent = this.currentPeriodInfo.subject;
             }
 
             updateNextDisplay() {
+                if (this.timetableType === 'none') {
+                    document.getElementById('next-period-name').textContent = '今日沒有課程';
+                    document.getElementById('next-period-time').textContent = '';
+                    document.getElementById('next-subject').textContent = '';
+                    return;
+                }
+
                 if (this.nextPeriodInfo) {
                     document.getElementById('next-period-name').textContent = this.nextPeriodInfo.name;
                     document.getElementById('next-period-time').textContent = 
@@ -1278,11 +1320,25 @@
             updateScheduleDisplay() {
                 const container = document.getElementById('schedule-grid');
                 const dayIndicator = document.getElementById('day-indicator');
+                const scheduleTitle = document.getElementById('schedule-title');
                 
+                if (this.timetableType === 'none') {
+                    dayIndicator.textContent = '非上課日';
+                    scheduleTitle.textContent = '今日無課程';
+                    this.renderEmptySchedule(container, '今日沒有課程');
+                    return;
+                }
+
                 dayIndicator.textContent = this.dayCycle ? `Day ${this.dayCycle}` : '無循環日';
-                
+
                 const timetable = TIMETABLE_DATA[this.timetableType];
                 const allItems = [];
+
+                if (!timetable) {
+                    scheduleTitle.textContent = '時間表載入失敗';
+                    this.renderEmptySchedule(container, '暫無時間表資料');
+                    return;
+                }
 
                 // Add assembly
                 if (timetable.preSchoolAssembly) {
@@ -1352,9 +1408,22 @@
                 
                 dayIndicator.textContent = this.dayCycle ? `Day ${this.dayCycle}` : '無循環日';
                 scheduleTitle.textContent = `${formattedDate} 時間表`;
+
+                if (this.timetableType === 'none') {
+                    dayIndicator.textContent = '非上課日';
+                    scheduleTitle.textContent = `${formattedDate} 無課程`;
+                    this.renderEmptySchedule(container, '該日沒有課程');
+                    return;
+                }
                 
                 const timetable = TIMETABLE_DATA[this.timetableType];
                 const allItems = [];
+
+                if (!timetable) {
+                    scheduleTitle.textContent = `${formattedDate} 時間表暫未可用`;
+                    this.renderEmptySchedule(container, '暫無時間表資料');
+                    return;
+                }
 
                 // Add assembly
                 if (timetable.preSchoolAssembly) {
@@ -1419,6 +1488,8 @@
                     noticeText = '特殊時間表D';
                 } else if (this.timetableType === 'specialE') {
                     noticeText = '特殊時間表E';
+                } else if (this.timetableType === 'none') {
+                    noticeText = '今日無課程';
                 } else {
                     noticeText = '正常時間表';
                 }
@@ -1426,7 +1497,29 @@
                 noticeElement.textContent = noticeText;
             }
 
+            renderEmptySchedule(container, message) {
+                container.innerHTML = `
+                    <div class="schedule-empty">${message}</div>
+                `;
+            }
+
             // Utility methods
+            getTodayDateString() {
+                return this.formatDateToISO(new Date());
+            }
+
+            formatDateToISO(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            isWeekendDate(date) {
+                const day = date.getDay();
+                return day === 0 || day === 6;
+            }
+
             isTimeInRange(current, start, end) {
                 return current >= start && current <= end;
             }
