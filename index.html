@@ -574,9 +574,123 @@
             outline: 2px solid var(--accent-color);
             outline-offset: 2px;
         }
+
+        /* Screensaver styles */
+        .screensaver {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        .screensaver.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .screensaver-content {
+            text-align: center;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .screensaver-time {
+            font-size: 120px;
+            font-weight: 700;
+            color: var(--accent-color);
+            font-family: "SF Mono", Monaco, Menlo, monospace;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px var(--shadow-color);
+        }
+
+        .screensaver-date {
+            font-size: 36px;
+            color: var(--text-color);
+            margin-bottom: 40px;
+        }
+
+        .screensaver-period {
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+
+        .screensaver-subject {
+            font-size: 32px;
+            color: var(--text-color-secondary);
+            margin-bottom: 30px;
+        }
+
+        .screensaver-countdown {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--accent-color);
+            font-family: "SF Mono", Monaco, Menlo, monospace;
+        }
+
+        .screensaver-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .screensaver-time {
+                font-size: 72px;
+            }
+
+            .screensaver-date {
+                font-size: 24px;
+            }
+
+            .screensaver-period {
+                font-size: 32px;
+            }
+
+            .screensaver-subject {
+                font-size: 24px;
+            }
+
+            .screensaver-countdown {
+                font-size: 48px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Screensaver -->
+    <div class="screensaver" id="screensaver">
+        <div class="screensaver-content">
+            <div class="screensaver-time" id="screensaver-time">--:--:--</div>
+            <div class="screensaver-date" id="screensaver-date">載入中...</div>
+            <div class="screensaver-period" id="screensaver-period">空堂時間</div>
+            <div class="screensaver-subject" id="screensaver-subject">目前沒有課程</div>
+            <div class="screensaver-countdown" id="screensaver-countdown">--:--:--</div>
+        </div>
+        <div class="screensaver-hint">點擊任意位置退出屏保</div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header class="header">
@@ -680,6 +794,10 @@
                 this.isPageVisible = true;
                 this.lastUpdateTime = Date.now();
                 this.animationFrameId = null;
+                this.screensaverActive = false;
+                this.idleTimer = null;
+                this.idleTimeout = 120000; // 2 minutes of inactivity
+                this.lastActivityTime = Date.now();
                 this.init();
             }
 
@@ -690,6 +808,7 @@
                 this.initNavigationButtons(); // Add this new method
                 this.initPageVisibility(); // Add Page Visibility API support
                 this.initMobileSupport(); // Add mobile-specific support
+                this.initScreensaver(); // Add screensaver support
                 this.updateDateTime();
                 this.updateTimetable();
                 
@@ -714,6 +833,14 @@
                 if (this.timetableUpdateInterval) {
                     clearInterval(this.timetableUpdateInterval);
                     this.timetableUpdateInterval = null;
+                }
+                if (this.idleTimer) {
+                    clearTimeout(this.idleTimer);
+                    this.idleTimer = null;
+                }
+                if (this.screensaverUpdateInterval) {
+                    clearInterval(this.screensaverUpdateInterval);
+                    this.screensaverUpdateInterval = null;
                 }
             }
 
@@ -812,6 +939,109 @@
                         }
                     }
                 }, 5000);
+            }
+
+            initScreensaver() {
+                const screensaver = document.getElementById('screensaver');
+                
+                // Activity events to reset idle timer
+                const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+                
+                activityEvents.forEach(eventType => {
+                    document.addEventListener(eventType, () => {
+                        this.lastActivityTime = Date.now();
+                        if (this.screensaverActive) {
+                            this.hideScreensaver();
+                        }
+                        this.resetIdleTimer();
+                    }, { passive: true });
+                });
+
+                // Click on screensaver to exit
+                screensaver.addEventListener('click', () => {
+                    this.hideScreensaver();
+                });
+
+                // Start idle timer
+                this.resetIdleTimer();
+            }
+
+            resetIdleTimer() {
+                if (this.idleTimer) {
+                    clearTimeout(this.idleTimer);
+                }
+                
+                this.idleTimer = setTimeout(() => {
+                    if (this.currentViewMode === 'today' && !this.screensaverActive) {
+                        this.showScreensaver();
+                    }
+                }, this.idleTimeout);
+            }
+
+            showScreensaver() {
+                this.screensaverActive = true;
+                const screensaver = document.getElementById('screensaver');
+                screensaver.classList.add('active');
+                this.updateScreensaver();
+                
+                // Update screensaver every second
+                this.screensaverUpdateInterval = setInterval(() => {
+                    this.updateScreensaver();
+                }, 1000);
+            }
+
+            hideScreensaver() {
+                this.screensaverActive = false;
+                const screensaver = document.getElementById('screensaver');
+                screensaver.classList.remove('active');
+                
+                if (this.screensaverUpdateInterval) {
+                    clearInterval(this.screensaverUpdateInterval);
+                    this.screensaverUpdateInterval = null;
+                }
+                
+                this.resetIdleTimer();
+            }
+
+            updateScreensaver() {
+                const now = new Date();
+                
+                // Update time
+                document.getElementById('screensaver-time').textContent = 
+                    now.toLocaleTimeString('zh-HK', { 
+                        hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                
+                // Update date
+                document.getElementById('screensaver-date').textContent = 
+                    now.toLocaleDateString('zh-HK', { 
+                        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+                    });
+                
+                // Update current period info
+                if (this.currentPeriodInfo) {
+                    document.getElementById('screensaver-period').textContent = this.currentPeriodInfo.name;
+                    document.getElementById('screensaver-subject').textContent = this.currentPeriodInfo.subject;
+                    
+                    // Update countdown
+                    if (this.currentPeriodInfo.end) {
+                        const endTime = this.parseTimeToDate(this.currentPeriodInfo.end);
+                        const timeDiff = endTime - now;
+                        
+                        if (timeDiff > 0) {
+                            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                            
+                            document.getElementById('screensaver-countdown').textContent = 
+                                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        } else {
+                            document.getElementById('screensaver-countdown').textContent = '00:00:00';
+                        }
+                    } else {
+                        document.getElementById('screensaver-countdown').textContent = '--:--:--';
+                    }
+                }
             }
 
             startRealTimeUpdates() {
@@ -1150,18 +1380,60 @@
                 this.updateCountdown();
             }
 
+            findConsecutivePeriods(startIndex, timetable, currentSubject) {
+                // Find how many consecutive periods have the same subject
+                let count = 1;
+                let endPeriodIndex = startIndex;
+                
+                // Look ahead to find consecutive periods with same subject
+                for (let i = startIndex + 1; i < timetable.periods.length; i++) {
+                    const nextSubject = SUBJECT_SCHEDULE[this.dayCycle]?.[i + 1] || '課程';
+                    
+                    // Check if subjects match (considering both might be default '課程')
+                    if (nextSubject === currentSubject && currentSubject !== '課程') {
+                        // Check if the periods are actually consecutive (no break in between)
+                        const currentPeriodEnd = timetable.periods[i - 1].end;
+                        const nextPeriodStart = timetable.periods[i].start;
+                        
+                        if (currentPeriodEnd === nextPeriodStart) {
+                            count++;
+                            endPeriodIndex = i;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                
+                const startPeriodNum = startIndex + 1;
+                const endPeriodNum = endPeriodIndex + 1;
+                
+                return {
+                    count: count,
+                    end: timetable.periods[endPeriodIndex].end,
+                    name: count > 1 ? `第${startPeriodNum}-${endPeriodNum}節` : `第${startPeriodNum}節`
+                };
+            }
+
             findCurrentPeriod(currentTimeStr, timetable) {
                 // Check courses
                 for (let i = 0; i < timetable.periods.length; i++) {
                     const period = timetable.periods[i];
                     if (this.isTimeInRange(currentTimeStr, period.start, period.end)) {
                         const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[i + 1] || '課程';
+                        
+                        // Find consecutive periods with the same subject
+                        const consecutiveInfo = this.findConsecutivePeriods(i, timetable, subject);
+                        
                         return {
                             type: 'period',
-                            name: `第${i + 1}節`,
+                            name: consecutiveInfo.name,
                             start: period.start,
-                            end: period.end,
-                            subject: subject // Show full subject information
+                            end: consecutiveInfo.end,
+                            subject: subject,
+                            periodIndex: i + 1,
+                            consecutiveCount: consecutiveInfo.count
                         };
                     }
                 }
