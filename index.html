@@ -6,7 +6,7 @@
     <title>實時時間表</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --font-family-system: "Poppins", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -711,7 +711,7 @@
                 </div>
                 
                 <button class="theme-toggle" id="theme-toggle">🌙</button>
-                <button class="theme-toggle" id="screensaver-toggle" title="開啟屏保">🖥️</button>
+                <button class="theme-toggle" id="screensaver-toggle" title="開啟屏保" aria-label="開啟屏保">🖥️</button>
                 <div class="datetime">
                     <div class="current-date" id="current-date">載入中...</div>
                     <div class="current-time" id="current-time">--:--:--</div>
@@ -789,6 +789,9 @@
     <script src="timetable-data.js"></script>
     <script>
         class TimetableApp {
+            // Constants
+            static IDLE_TIMEOUT_MS = 120000; // 2 minutes of inactivity
+            
             constructor() {
                 this.currentViewMode = 'today';
                 this.selectedDate = null;
@@ -800,7 +803,6 @@
                 this.animationFrameId = null;
                 this.screensaverActive = false;
                 this.idleTimer = null;
-                this.idleTimeout = 120000; // 2 minutes of inactivity
                 this.lastActivityTime = Date.now();
                 this.init();
             }
@@ -987,7 +989,7 @@
                     if (this.currentViewMode === 'today' && !this.screensaverActive) {
                         this.showScreensaver();
                     }
-                }, this.idleTimeout);
+                }, TimetableApp.IDLE_TIMEOUT_MS);
             }
 
             showScreensaver() {
