@@ -617,7 +617,7 @@
             font-size: 120px;
             font-weight: 700;
             color: var(--accent-color);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
+            font-family: "Poppins", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
             margin-bottom: 20px;
             text-shadow: 0 4px 20px var(--shadow-color);
         }
@@ -645,7 +645,7 @@
             font-size: 64px;
             font-weight: 700;
             color: var(--accent-color);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
+            font-family: "Poppins", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .screensaver-hint {
@@ -804,6 +804,7 @@
                 this.screensaverActive = false;
                 this.idleTimer = null;
                 this.lastActivityTime = Date.now();
+                this.isManuallyOpening = false;
                 this.init();
             }
 
@@ -870,8 +871,15 @@
 
             initScreensaverButton() {
                 const screensaverToggle = document.getElementById('screensaver-toggle');
-                screensaverToggle.addEventListener('click', () => {
+                screensaverToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Set a flag to prevent activity detection from closing screensaver immediately
+                    this.isManuallyOpening = true;
                     this.showScreensaver();
+                    // Reset flag after a short delay
+                    setTimeout(() => {
+                        this.isManuallyOpening = false;
+                    }, 500);
                 });
             }
 
@@ -964,7 +972,8 @@
                 activityEvents.forEach(eventType => {
                     document.addEventListener(eventType, () => {
                         this.lastActivityTime = Date.now();
-                        if (this.screensaverActive) {
+                        // Don't hide screensaver if manually opening
+                        if (this.screensaverActive && !this.isManuallyOpening) {
                             this.hideScreensaver();
                         }
                         this.resetIdleTimer();
