@@ -1,107 +1,161 @@
-# 實時時間表應用程式
+# 實時時間表 PWA
 
-這是一個實時顯示學校時間表的網頁應用程式，支持正常時間表和多種特殊時間表。
+學校實時時間表應用程式 - 採用 Material You 設計語言，支援離線使用、通知提醒。
 
-## 功能特色
+## ✨ 功能特色
 
-### 主要功能
-- **實時時間顯示** - 顯示當前日期、時間
-- **當前課程狀態** - 顯示現在是什麼課程或活動
-- **倒計時功能** - 顯示到下課時間的倒計時
-- **下堂課預覽** - 顯示下一堂課的信息
-- **完整時間表** - 顯示今日完整課程安排
-- **特殊時間表支持** - 自動識別和應用特殊時間表
+### 🎨 Material You 設計
+- 完整的 Material Design 3 設計系統
+- 動態主題色彩（淺色/深色模式）
+- 流暢的動畫與轉場效果
+- 響應式漣漪效果
 
-### 支持的時間表類型
-1. **正常時間表** - 常規上課日使用
-2. **特殊時間表A** - 學期初安排 (3-10/9)
-3. **特殊時間表B** - 所有星期五、開學禮、中華文化週等
-4. **特殊時間表C** - 福音聚會、跳繩比賽等
-5. **特殊時間表D** - 社際聚會
-6. **特殊時間表E** - 資訊日準備
+### 📱 行動端優化
+- 底部導航列（行動裝置）
+- 左右滑動切換日期
+- 觸覺回饋（震動）
+- 安全區域適配（瀏海/打孔螢幕）
+- 48px 最小觸控目標
 
-### 智能識別規則
-- 自動根據日期識別應使用的時間表
-- 所有星期五自動使用特殊時間表B
-- 支持Day 1-6循環制
-- 特殊日期自動切換對應時間表
+### 🔔 通知提醒
+- 課前 5 分鐘提醒
+- 節次變更通知
+- 特殊時間表提醒
+- 可自訂提醒時間
 
-## 文件結構
+### 📡 離線功能 (PWA)
+- Service Worker 快取
+- 離線存取時間表
+- 離線狀態指示器
+- 背景同步
+- 可安裝至主畫面
+
+### 🔌 GET API 端點
+
+透過 URL 參數或 JavaScript 呼叫取得時間表資料：
+
+#### URL 參數用法
+```
+?api=today              - 取得今日時間表
+?api=current            - 取得當前節次資訊
+?api=date&date=2025-12-15  - 取得指定日期
+?api=week               - 取得本週時間表
+?api=subjects           - 取得所有科目
+?api=timetables         - 取得所有時間表類型
+
+加上 &format=json 可在瀏覽器中顯示原始 JSON
+```
+
+#### JavaScript 用法
+```javascript
+const api = window.TimetableAPI;
+
+// 取得今日時間表
+const today = api.getToday();
+
+// 取得當前節次
+const current = api.getCurrent();
+
+// 取得指定日期
+const specific = api.getByDate('2025-12-15');
+
+// 取得本週
+const week = api.getWeek();
+```
+
+#### 回應格式範例
+```json
+{
+  "success": true,
+  "timestamp": "2025-12-14T10:30:00.000Z",
+  "data": {
+    "date": "2025-12-15",
+    "dayOfWeek": "星期一",
+    "dayCycle": 6,
+    "timetableType": "normal",
+    "isSchoolDay": true,
+    "schedule": [
+      {
+        "type": "period",
+        "name": "第1節",
+        "start": "08:40",
+        "end": "09:20",
+        "subject": "ICT WKC 316"
+      }
+    ]
+  }
+}
+```
+
+## 📂 專案結構
 
 ```
 timetable/
-├── index.html          # 主頁面
-├── style.css           # 樣式文件
-├── script.js           # 主要邏輯
-├── timetable-data.js   # 時間表數據
-├── timetable.txt       # 原始時間表數據
-├── days.txt           # 日期輪換數據
-├── special-date.txt   # 特殊日期規則
-└── README.md          # 說明文件
+├── index.html          # 主 HTML 檔案
+├── style.css           # Material You 樣式
+├── script.js           # 主應用程式邏輯
+├── timetable-data.js   # 時間表資料
+├── api.js              # GET API 模組
+├── notifications.js    # 通知管理模組
+├── sw.js               # Service Worker
+├── manifest.json       # PWA Manifest
+├── icons/              # 應用程式圖示
+│   └── icon.svg        # SVG 圖示來源
+└── README.md           # 說明文件
 ```
 
-## 使用方法
+## 🚀 部署至 GitHub Pages
 
-1. 啟動本地服務器：
-   ```bash
-   python -m http.server 8000
-   ```
+1. 將專案推送至 GitHub 儲存庫
+2. 前往 Settings → Pages
+3. Source 選擇 "Deploy from a branch"
+4. Branch 選擇 "main" (或 "master")
+5. 資料夾選擇 "/ (root)"
+6. 點擊 Save
 
-2. 在瀏覽器中訪問：
-   ```
-   http://localhost:8000
-   ```
+部署完成後，可透過 `https://<username>.github.io/<repo>/` 存取。
 
-3. 應用程式會自動：
-   - 顯示當前時間和日期
-   - 識別今日應使用的時間表
-   - 顯示當前課程狀態
-   - 提供實時倒計時
-   - 預覽下一堂課
+## 🛠️ 開發
 
-## 技術特點
+### 本地開發
+使用任何靜態檔案伺服器即可：
+```bash
+# Python
+python -m http.server 8080
 
-### 響應式設計
-- 支持桌面和移動設備
-- 自適應不同屏幕尺寸
-- 優雅的動畫效果
+# Node.js
+npx serve
 
-### 實時更新
-- 每秒更新時間和倒計時
-- 每分鐘檢查課程狀態
-- 自動切換當前課程高亮
+# VS Code Live Server 擴充功能
+```
 
-### 用戶友好
-- 清晰的視覺設計
-- 直觀的信息展示
-- 不同狀態用不同顏色區分
+### 產生 PNG 圖示
+使用 SVG 圖示產生各尺寸 PNG：
+```bash
+# 使用 ImageMagick
+convert icons/icon.svg -resize 192x192 icons/icon-192.png
+convert icons/icon.svg -resize 512x512 icons/icon-512.png
 
-## 數據來源
+# 或使用線上工具如 https://realfavicongenerator.net/
+```
 
-應用程式基於以下數據文件：
-- `timetable.txt` - 正常課程時間表
-- `special-date.txt` - 特殊時間表和日期規則
-- `days.txt` - Day 1-6 循環日期對應
+## 📋 時間表資料更新
 
-## 自定義說明
+編輯 `timetable-data.js` 檔案：
 
-如需修改時間表數據，請編輯 `timetable-data.js` 文件中的相應部分：
-- `TIMETABLE_DATA` - 時間表結構
-- `SUBJECT_SCHEDULE` - 科目安排
-- `DAY_ROTATION` - 日期循環
-- `SPECIAL_DATES` - 特殊日期規則
+- `TIMETABLE_DATA` - 時間表時段定義
+- `SUBJECT_SCHEDULE` - 各 Day Cycle 的科目
+- `DAY_ROTATION` - 日期對應的 Day Cycle
+- `SPECIAL_DATES` - 特殊時間表日期
 
-## 瀏覽器支持
+## 🎯 瀏覽器支援
 
-支持所有現代瀏覽器：
-- Chrome
-- Firefox
-- Safari
-- Edge
+- Chrome 80+
+- Safari 14+
+- Firefox 75+
+- Edge 80+
+- Samsung Internet 12+
 
-## 更新日誌
+## 📄 授權
 
-- v1.0 - 初始版本，包含所有基本功能
-- 支持正常時間表和5種特殊時間表
-- 實時倒計時和狀態顯示
-- 響應式設計
+MIT License
