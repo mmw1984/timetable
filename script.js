@@ -22,26 +22,33 @@ class TimetableApp {
   }
 
   async init() {
-    // Register Service Worker
-    await this.registerServiceWorker();
-    
-    // Initialize UI
-    this.initTheme();
-    this.initViewSwitcher();
-    this.initDateSelection();
-    this.initNavigationButtons();
-    this.initBottomNavigation();
-    this.initPageVisibility();
-    this.initMobileSupport();
-    this.initSwipeGestures();
-    this.initOnlineStatus();
-    this.initNotifications();
-    this.initSnackbar();
-    
-    // Start updates
-    this.updateDateTime();
-    this.updateTimetable();
-    this.startRealTimeUpdates();
+    try {
+      // Register Service Worker (non-blocking)
+      this.registerServiceWorker().catch(err => console.warn('[SW] Registration skipped:', err));
+      
+      // Initialize UI
+      this.initTheme();
+      this.initViewSwitcher();
+      this.initDateSelection();
+      this.initNavigationButtons();
+      this.initBottomNavigation();
+      this.initPageVisibility();
+      this.initMobileSupport();
+      this.initSwipeGestures();
+      this.initOnlineStatus();
+      this.initNotifications();
+      this.initSnackbar();
+      
+      // Start updates
+      this.updateDateTime();
+      this.updateTimetable();
+      this.startRealTimeUpdates();
+    } catch (error) {
+      console.error('[App] Initialization error:', error);
+      // Still try to show basic content
+      this.updateDateTime();
+      this.updateTimetable();
+    }
     
     // Update timetable every minute
     this.timetableUpdateInterval = setInterval(() => {
@@ -435,13 +442,14 @@ class TimetableApp {
   updateNotificationUI(settings) {
     const icon = document.getElementById('notification-icon');
     const fab = document.getElementById('fab-notifications');
+    const fabIcon = fab?.querySelector('.material-symbols-rounded');
     
     if (settings.enabled && settings.permission === 'granted') {
       icon.textContent = 'notifications_active';
-      fab?.querySelector('.material-symbols-rounded').textContent = 'notifications_active';
+      if (fabIcon) fabIcon.textContent = 'notifications_active';
     } else {
       icon.textContent = 'notifications_off';
-      fab?.querySelector('.material-symbols-rounded').textContent = 'notifications_off';
+      if (fabIcon) fabIcon.textContent = 'notifications_off';
     }
   }
 
@@ -1054,5 +1062,26 @@ class TimetableApp {
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  window.app = new TimetableApp();
+  try {
+    // Verify required global data is available
+    if (typeof TIMETABLE_DATA === 'undefined') {
+      console.error('[App] TIMETABLE_DATA not loaded');
+    }
+    if (typeof DAY_ROTATION === 'undefined') {
+      console.error('[App] DAY_ROTATION not loaded');
+    }
+    if (typeof SPECIAL_DATES === 'undefined') {
+      console.error('[App] SPECIAL_DATES not loaded');
+    }
+    if (typeof SUBJECT_SCHEDULE === 'undefined') {
+      console.error('[App] SUBJECT_SCHEDULE not loaded');
+    }
+    
+    window.app = new TimetableApp();
+  } catch (error) {
+    console.error('[App] Failed to initialize:', error);
+    // Show error message to user
+    document.getElementById('current-period-name').textContent = '載入失敗';
+    document.getElementById('current-subject').textContent = error.message;
+  }
 });

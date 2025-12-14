@@ -5,7 +5,7 @@
 
 class NotificationManager {
   constructor() {
-    this.permission = Notification.permission;
+    this.permission = ('Notification' in window) ? Notification.permission : 'denied';
     this.enabled = localStorage.getItem('notifications-enabled') === 'true';
     this.reminderMinutes = parseInt(localStorage.getItem('reminder-minutes')) || 5;
     this.scheduledNotifications = new Map();

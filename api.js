@@ -331,12 +331,16 @@ class TimetableAPI {
 window.TimetableAPI = new TimetableAPI();
 
 // Handle URL query parameters for GET requests
-(function handleURLParams() {
+function handleURLParams() {
   const params = new URLSearchParams(window.location.search);
   const apiEndpoint = params.get('api');
   
   if (apiEndpoint) {
     const api = window.TimetableAPI;
+    if (!api) {
+      console.error('[API] TimetableAPI not available');
+      return;
+    }
     let response;
 
     switch (apiEndpoint) {
@@ -377,7 +381,14 @@ window.TimetableAPI = new TimetableAPI();
     // Store response for programmatic access
     window.apiResponse = response;
   }
-})();
+}
+
+// Run after DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', handleURLParams);
+} else {
+  handleURLParams();
+}
 
 /**
  * Usage Examples:
