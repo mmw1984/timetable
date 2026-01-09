@@ -2,601 +2,103 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#6750A4" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#D0BCFF" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="時間表">
+    <meta name="description" content="學校實時時間表應用程式 - 查看課程時間、倒計時、通知提醒">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
     <title>實時時間表</title>
-    <style>
-        :root {
-            --font-family-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            
-            /* Light Mode */
-            --bg-color-light: #f5f5f7;
-            --text-color-light: #1d1d1f;
-            --text-color-secondary-light: #6e6e73;
-            --accent-color-light: #007aff;
-            --card-bg-light: #ffffff;
-            --border-color-light: #d2d2d7;
-            --shadow-color-light: rgba(0, 0, 0, 0.1);
-
-            /* Dark Mode */
-            --bg-color-dark: #000000;
-            --text-color-dark: #f5f5f7;
-            --text-color-secondary-dark: #86868b;
-            --accent-color-dark: #0a84ff;
-            --card-bg-dark: #1c1c1e;
-            --border-color-dark: #38383a;
-            --shadow-color-dark: rgba(0, 0, 0, 0.3);
-
-            /* Current theme variables */
-            --bg-color: var(--bg-color-light);
-            --text-color: var(--text-color-light);
-            --text-color-secondary: var(--text-color-secondary-light);
-            --accent-color: var(--accent-color-light);
-            --card-bg: var(--card-bg-light);
-            --border-color: var(--border-color-light);
-            --shadow-color: var(--shadow-color-light);
-
-            /* Spacing */
-            --radius: 20px;
-            --padding-xs: 8px;
-            --padding-sm: 12px;
-            --padding-md: 16px;
-            --padding-lg: 24px;
-            --gap-xs: 4px;
-            --gap-sm: 8px;
-            --gap-md: 16px;
-            --gap-lg: 24px;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: var(--bg-color-dark);
-            --text-color: var(--text-color-dark);
-            --text-color-secondary: var(--text-color-secondary-dark);
-            --accent-color: var(--accent-color-dark);
-            --card-bg: var(--card-bg-dark);
-            --border-color: var(--border-color-dark);
-            --shadow-color: var(--shadow-color-dark);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-family-system);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: var(--padding-lg);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            gap: var(--gap-lg);
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: var(--padding-lg);
-            box-shadow: 0 2px 10px var(--shadow-color);
-            border: 1px solid var(--border-color);
-        }
-
-        .title {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-color);
-            letter-spacing: -0.5px;
-        }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: var(--gap-md);
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: var(--gap-sm);
-        }
-
-        .view-switcher {
-            display: flex;
-            background: var(--bg-color);
-            border-radius: 8px;
-            padding: 4px;
-            border: 1px solid var(--border-color);
-        }
-
-        .view-btn {
-            padding: 8px 16px;
-            background: none;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: var(--text-color-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .view-btn.active {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .theme-toggle {
-            padding: 8px;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text-color-secondary);
-            transition: all 0.2s ease;
-        }
-
-        .theme-toggle:hover {
-            color: var(--text-color);
-            border-color: var(--accent-color);
-        }
-
-        .datetime {
-            text-align: right;
-        }
-
-        .current-date {
-            font-size: 14px;
-            color: var(--text-color-secondary);
-            margin-bottom: 4px;
-        }
-
-        .current-time {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--accent-color);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
-        }
-
-        /* Main Layout */
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: var(--gap-lg);
-            flex: 1;
-        }
-
-        .left-panel {
-            display: flex;
-            flex-direction: column;
-            gap: var(--gap-md);
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: var(--padding-lg);
-            box-shadow: 0 2px 10px var(--shadow-color);
-            border: 1px solid var(--border-color);
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: var(--padding-md);
-        }
-
-        /* Current Status */
-        .current-status {
-            text-align: center;
-        }
-
-        .period-name {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-bottom: var(--padding-xs);
-        }
-
-        .period-time {
-            font-size: 14px;
-            color: var(--text-color-secondary);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
-            margin-bottom: var(--padding-sm);
-        }
-
-        .subject-name {
-            font-size: 16px;
-            color: var(--text-color);
-            font-weight: 500;
-        }
-
-        /* Countdown */
-        .countdown-display {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--accent-color);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
-            text-align: center;
-            margin-bottom: var(--padding-xs);
-        }
-
-        .countdown-label {
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-color-secondary);
-        }
-
-        /* Next Period */
-        .next-period-info {
-            text-align: center;
-        }
-
-        .next-period-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: var(--padding-xs);
-        }
-
-        .next-period-time {
-            font-size: 14px;
-            color: var(--text-color-secondary);
-            font-family: "SF Mono", Monaco, Menlo, monospace;
-            margin-bottom: var(--padding-sm);
-        }
-
-        .next-subject {
-            font-size: 14px;
-            color: var(--text-color);
-        }
-
-        /* Date Selection */
-        .date-selection {
-            display: none;
-            text-align: center;
-        }
-
-        .date-selection.active {
-            display: block;
-        }
-
-        .date-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--gap-sm);
-            justify-content: center;
-            align-items: center;
-            margin-bottom: var(--padding-lg);
-        }
-
-        .date-picker {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-size: 14px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--card-bg);
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .btn:hover {
-            border-color: var(--accent-color);
-        }
-
-        .btn.primary {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .btn.primary:hover {
-            opacity: 0.9;
-        }
-
-        .selected-date-info {
-            margin-top: var(--padding-md);
-        }
-
-        .selected-date-display {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: var(--padding-sm);
-        }
-
-        .date-details {
-            display: flex;
-            gap: var(--gap-sm);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .date-tag {
-            padding: 4px 12px;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-color-secondary);
-        }
-
-        /* Schedule */
-        .schedule-section {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .schedule-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--padding-lg);
-        }
-
-        .schedule-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-color);
-        }
-
-        .day-indicator {
-            background: var(--accent-color);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .schedule-grid {
-            display: flex;
-            flex-direction: column;
-            gap: var(--gap-sm);
-            flex: 1;
-            overflow-y: auto;
-            max-height: 600px;
-        }
-
-        .schedule-item {
-            display: grid;
-            grid-template-columns: 80px 60px 1fr;
-            gap: var(--gap-md);
-            align-items: center;
-            padding: var(--padding-md);
-            background: var(--bg-color);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-
-        .schedule-item:hover {
-            border-color: var(--accent-color);
-        }
-
-        .schedule-item.current {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-
-        .schedule-item.current .item-time,
-        .schedule-item.current .item-period,
-        .schedule-item.current .item-subject {
-            color: white;
-        }
-
-        .schedule-item.break {
-            background: #ff9f0a;
-            color: white;
-            border-color: #ff9f0a;
-        }
-
-        .schedule-item.break .item-time,
-        .schedule-item.break .item-period,
-        .schedule-item.break .item-subject {
-            color: white;
-        }
-
-        .item-time {
-            font-family: "SF Mono", Monaco, Menlo, monospace;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-color-secondary);
-        }
-
-        .item-period {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        .item-subject {
-            font-size: 14px;
-            color: var(--text-color);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .notice {
-            background: #ff9f0a;
-            color: white;
-            padding: var(--padding-md);
-            border-radius: var(--radius);
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .schedule-empty {
-            text-align: center;
-            padding: var(--padding-lg);
-            color: var(--text-color-secondary);
-            border: 1px dashed var(--border-color);
-            border-radius: var(--radius);
-            background: var(--bg-color);
-            font-weight: 500;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: var(--padding-md);
-                gap: var(--gap-md);
-            }
-
-            .header {
-                flex-direction: column;
-                gap: var(--gap-md);
-                align-items: stretch;
-            }
-
-            .header-controls {
-                justify-content: space-between;
-                flex-wrap: wrap;
-                gap: var(--gap-sm);
-            }
-
-            .nav-buttons {
-                order: 2;
-                flex: 1;
-                justify-content: center;
-            }
-
-            .main-content {
-                grid-template-columns: 1fr;
-                gap: var(--gap-md);
-            }
-
-            .left-panel {
-                order: 2;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: var(--gap-sm);
-            }
-
-            .schedule-section {
-                order: 1;
-            }
-
-            .title {
-                font-size: 24px;
-                text-align: center;
-            }
-
-            .period-name {
-                font-size: 20px;
-            }
-
-            .countdown-display {
-                font-size: 24px;
-            }
-
-            .schedule-item {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: var(--gap-xs);
-                padding: var(--padding-sm);
-            }
-
-            .item-time, .item-period, .item-subject {
-                font-size: 12px;
-            }
-
-            .date-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .date-controls .btn,
-            .date-picker {
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: var(--padding-sm);
-            }
-
-            .left-panel {
-                grid-template-columns: 1fr;
-            }
-
-            .view-switcher {
-                flex-direction: column;
-            }
-
-            .header-controls {
-                flex-direction: column;
-                gap: var(--gap-sm);
-            }
-        }
-
-        /* Smooth transitions */
-        .schedule-item,
-        .card,
-        .btn,
-        .view-btn {
-            transition: all 0.2s ease;
-        }
-
-        /* Focus styles for accessibility */
-        .btn:focus,
-        .view-btn:focus,
-        .theme-toggle:focus,
-        .date-picker:focus {
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1 class="title">實時時間表</h1>
-            <div class="header-controls">
-                <div class="view-switcher">
-                    <button class="view-btn active" data-view="today">今日時間表</button>
-                    <button class="view-btn" data-view="date-select">選擇日期</button>
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offline-indicator">
+        <span class="material-symbols-rounded">cloud_off</span>
+        <span>離線模式</span>
+    </div>
+
+    <!-- Pull to Refresh -->
+    <div class="pull-to-refresh" id="pull-to-refresh">
+        <span class="material-symbols-rounded">refresh</span>
+        <span>更新中...</span>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Notification Permission Banner -->
+        <div class="notification-banner" id="notification-banner">
+            <span class="material-symbols-rounded">notifications</span>
+            <div class="notification-banner__content">
+                <div class="notification-banner__title">開啟課堂提醒</div>
+                <div class="notification-banner__text">在課堂開始前收到通知</div>
+            </div>
+            <div class="notification-banner__actions">
+                <button class="btn btn--text" id="dismiss-notification-banner">稍後</button>
+                <button class="btn btn--filled" id="enable-notifications">開啟</button>
+            </div>
+        </div>
+
+        <!-- Top App Bar -->
+        <header class="top-app-bar">
+            <h1 class="top-app-bar__title">實時時間表</h1>
+            
+            <div class="top-app-bar__actions">
+                <!-- View Switcher (Desktop) -->
+                <div class="segmented-button">
+                    <button class="segmented-button__item active ripple" data-view="today">
+                        <span class="material-symbols-rounded">today</span>
+                        今日
+                    </button>
+                    <button class="segmented-button__item ripple" data-view="date-select">
+                        <span class="material-symbols-rounded">calendar_month</span>
+                        選擇日期
+                    </button>
                 </div>
-                
-                <!-- Navigation buttons -->
+
+                <!-- Navigation Buttons (Desktop) -->
                 <div class="nav-buttons">
-                    <button id="prev-day-btn" class="btn">上一天</button>
-                    <button id="next-day-btn" class="btn">下一天</button>
+                    <button class="btn btn--tonal ripple" id="prev-day-btn">
+                        <span class="material-symbols-rounded">chevron_left</span>
+                        上一天
+                    </button>
+                    <button class="btn btn--tonal ripple" id="next-day-btn">
+                        下一天
+                        <span class="material-symbols-rounded">chevron_right</span>
+                    </button>
                 </div>
-                
-                <button class="theme-toggle" id="theme-toggle">🌙</button>
-                <div class="datetime">
-                    <div class="current-date" id="current-date">載入中...</div>
-                    <div class="current-time" id="current-time">--:--:--</div>
+
+                <!-- Theme Toggle -->
+                <button class="icon-button ripple" id="theme-toggle" aria-label="切換主題">
+                    <span class="material-symbols-rounded" id="theme-icon">dark_mode</span>
+                </button>
+
+                <!-- Notification Toggle -->
+                <button class="icon-button ripple" id="notification-toggle" aria-label="通知設定">
+                    <span class="material-symbols-rounded" id="notification-icon">notifications_off</span>
+                </button>
+
+                <!-- DateTime (Desktop) -->
+                <div class="top-app-bar__datetime">
+                    <div class="top-app-bar__date" id="current-date">載入中...</div>
+                    <div class="top-app-bar__time" id="current-time">--:--:--</div>
                 </div>
             </div>
         </header>
@@ -604,942 +106,150 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Left Panel -->
-            <div class="left-panel">
-                <!-- Current Status -->
-                <div class="card current-status-card">
-                    <h2 class="card-title">當前狀態</h2>
-                    <div class="current-status">
-                        <div class="period-name" id="current-period-name">載入中...</div>
-                        <div class="period-time" id="current-period-time">--:-- - --:--</div>
-                        <div class="subject-name" id="current-subject">正在載入...</div>
+            <aside class="left-panel">
+                <!-- Current Status Card -->
+                <div class="card card--elevated current-status-card">
+                    <div class="card__header">
+                        <div class="card__icon">
+                            <span class="material-symbols-rounded">schedule</span>
+                        </div>
+                        <h2 class="card__title">當前狀態</h2>
+                    </div>
+                    <div class="card__content">
+                        <div class="current-status__period" id="current-period-name">載入中...</div>
+                        <div class="current-status__time" id="current-period-time">--:-- - --:--</div>
+                        <div class="current-status__subject" id="current-subject">正在載入...</div>
                     </div>
                 </div>
 
-                <!-- Countdown -->
-                <div class="card countdown-card">
-                    <h2 class="card-title">倒計時</h2>
-                    <div class="countdown-display" id="countdown-display">--:--:--</div>
-                    <div class="countdown-label" id="countdown-label">載入中...</div>
-                </div>
-
-                <!-- Next Period -->
-                <div class="card next-period-card">
-                    <h2 class="card-title">下一堂課</h2>
-                    <div class="next-period-info">
-                        <div class="next-period-name" id="next-period-name">載入中...</div>
-                        <div class="next-period-time" id="next-period-time">--:-- - --:--</div>
-                        <div class="next-subject" id="next-subject">載入中...</div>
+                <!-- Countdown Card -->
+                <div class="card card--elevated countdown-card">
+                    <div class="card__header">
+                        <div class="card__icon">
+                            <span class="material-symbols-rounded">timer</span>
+                        </div>
+                        <h2 class="card__title">倒計時</h2>
+                    </div>
+                    <div class="card__content">
+                        <div class="countdown__display" id="countdown-display">--:--:--</div>
+                        <div class="countdown__label" id="countdown-label">載入中...</div>
                     </div>
                 </div>
 
-                <!-- Date Selection -->
-                <div class="card date-selection" id="date-selection">
-                    <h2 class="card-title">選擇日期</h2>
+                <!-- Next Period Card -->
+                <div class="card card--elevated next-period-card">
+                    <div class="card__header">
+                        <div class="card__icon">
+                            <span class="material-symbols-rounded">upcoming</span>
+                        </div>
+                        <h2 class="card__title">下一堂課</h2>
+                    </div>
+                    <div class="card__content">
+                        <div class="next-period__name" id="next-period-name">載入中...</div>
+                        <div class="next-period__time" id="next-period-time">--:-- - --:--</div>
+                        <div class="next-period__subject" id="next-subject">載入中...</div>
+                    </div>
+                </div>
+
+                <!-- Date Selection Card -->
+                <div class="card card--elevated date-selection" id="date-selection">
+                    <div class="card__header">
+                        <div class="card__icon">
+                            <span class="material-symbols-rounded">calendar_today</span>
+                        </div>
+                        <h2 class="card__title">選擇日期</h2>
+                    </div>
                     <div class="date-controls">
                         <input type="date" id="date-picker" class="date-picker">
-                        <button id="view-selected-date" class="btn primary">查看</button>
-                        <button id="back-to-today" class="btn">返回今日</button>
+                        <button id="view-selected-date" class="btn btn--filled ripple">
+                            <span class="material-symbols-rounded">visibility</span>
+                            查看
+                        </button>
+                        <button id="back-to-today" class="btn btn--outlined ripple">
+                            <span class="material-symbols-rounded">today</span>
+                            返回今日
+                        </button>
                     </div>
                     <div class="selected-date-info" id="selected-date-info" style="display: none;">
                         <div class="selected-date-display" id="selected-date-display"></div>
                         <div class="date-details">
-                            <span class="date-tag" id="selected-day-cycle"></span>
-                            <span class="date-tag" id="selected-timetable-type"></span>
+                            <span class="chip chip--filled" id="selected-day-cycle"></span>
+                            <span class="chip" id="selected-timetable-type"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Special Notice -->
-                <div class="card notice-card">
-                    <div class="notice" id="special-notice">載入中...</div>
+                <!-- Notice Banner -->
+                <div class="notice-banner" id="special-notice-banner">
+                    <span class="material-symbols-rounded">info</span>
+                    <span id="special-notice">載入中...</span>
                 </div>
-            </div>
+            </aside>
 
             <!-- Schedule Section -->
-            <div class="card schedule-section">
+            <section class="card card--elevated schedule-section">
                 <div class="schedule-header">
                     <h2 class="schedule-title" id="schedule-title">今日時間表</h2>
                     <div class="day-indicator" id="day-indicator">載入中...</div>
                 </div>
                 <div class="schedule-grid" id="schedule-grid">
-                    <!-- 動態內容 -->
+                    <!-- Dynamic content -->
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="bottom-nav__item active" data-view="today">
+            <div class="bottom-nav__icon-container">
+                <span class="material-symbols-rounded">today</span>
+            </div>
+            <span class="bottom-nav__label">今日</span>
+        </button>
+        <button class="bottom-nav__item" data-view="date-select">
+            <div class="bottom-nav__icon-container">
+                <span class="material-symbols-rounded">calendar_month</span>
+            </div>
+            <span class="bottom-nav__label">日曆</span>
+        </button>
+        <button class="bottom-nav__item" id="nav-prev">
+            <div class="bottom-nav__icon-container">
+                <span class="material-symbols-rounded">chevron_left</span>
+            </div>
+            <span class="bottom-nav__label">上一天</span>
+        </button>
+        <button class="bottom-nav__item" id="nav-next">
+            <div class="bottom-nav__icon-container">
+                <span class="material-symbols-rounded">chevron_right</span>
+            </div>
+            <span class="bottom-nav__label">下一天</span>
+        </button>
+    </nav>
+
+    <!-- Floating Action Button (Mobile) -->
+    <button class="fab" id="fab-notifications" aria-label="通知設定">
+        <span class="material-symbols-rounded">notifications</span>
+    </button>
+
+    <!-- Swipe Indicators -->
+    <div class="swipe-indicator left" id="swipe-left">
+        <span class="material-symbols-rounded">chevron_left</span>
+    </div>
+    <div class="swipe-indicator right" id="swipe-right">
+        <span class="material-symbols-rounded">chevron_right</span>
+    </div>
+
+    <!-- Snackbar -->
+    <div class="snackbar" id="snackbar">
+        <span id="snackbar-message"></span>
+        <button class="snackbar__action" id="snackbar-action">關閉</button>
+    </div>
+
+    <!-- Scripts -->
     <script src="timetable-data.js"></script>
-    <script>
-        class TimetableApp {
-            constructor() {
-                this.currentViewMode = 'today';
-                this.selectedDate = null;
-                this.theme = localStorage.getItem('theme') || 'light';
-                this.realTimeUpdateInterval = null;
-                this.timetableUpdateInterval = null;
-                this.isPageVisible = true;
-                this.lastUpdateTime = Date.now();
-                this.animationFrameId = null;
-                this.init();
-            }
-
-            init() {
-                this.initTheme();
-                this.initViewSwitcher();
-                this.initDateSelection();
-                this.initNavigationButtons(); // Add this new method
-                this.initPageVisibility(); // Add Page Visibility API support
-                this.initMobileSupport(); // Add mobile-specific support
-                this.updateDateTime();
-                this.updateTimetable();
-                
-                // Start real-time updates with mobile fallback
-                this.startRealTimeUpdates();
-                
-                // Update timetable every minute
-                this.timetableUpdateInterval = setInterval(() => {
-                    if (this.currentViewMode === 'today' && this.isPageVisible) {
-                        this.updateTimetable();
-                    }
-                }, 60000);
-                
-                // Clean up on page unload
-                window.addEventListener('beforeunload', () => {
-                    this.cleanup();
-                });
-            }
-
-            cleanup() {
-                this.stopRealTimeUpdates();
-                if (this.timetableUpdateInterval) {
-                    clearInterval(this.timetableUpdateInterval);
-                    this.timetableUpdateInterval = null;
-                }
-            }
-
-            initTheme() {
-                const themeToggle = document.getElementById('theme-toggle');
-                this.applyTheme();
-                
-                themeToggle.addEventListener('click', () => {
-                    this.theme = this.theme === 'light' ? 'dark' : 'light';
-                    localStorage.setItem('theme', this.theme);
-                    this.applyTheme();
-                });
-            }
-
-            applyTheme() {
-                document.body.setAttribute('data-theme', this.theme);
-                const themeToggle = document.getElementById('theme-toggle');
-                themeToggle.textContent = this.theme === 'light' ? '🌙' : '☀️';
-            }
-
-            initViewSwitcher() {
-                const viewButtons = document.querySelectorAll('.view-btn');
-                viewButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        this.switchView(button.dataset.view);
-                    });
-                });
-            }
-
-            initPageVisibility() {
-                // Page Visibility API to handle iPad Safari timer throttling
-                let visibilityChangeEvent = 'visibilitychange';
-                let hiddenProperty = 'hidden';
-
-                // Check for vendor prefixes (especially for older Safari)
-                if (typeof document.hidden !== 'undefined') {
-                    hiddenProperty = 'hidden';
-                    visibilityChangeEvent = 'visibilitychange';
-                } else if (typeof document.webkitHidden !== 'undefined') {
-                    hiddenProperty = 'webkitHidden';
-                    visibilityChangeEvent = 'webkitvisibilitychange';
-                } else if (typeof document.mozHidden !== 'undefined') {
-                    hiddenProperty = 'mozHidden';
-                    visibilityChangeEvent = 'mozvisibilitychange';
-                } else if (typeof document.msHidden !== 'undefined') {
-                    hiddenProperty = 'msHidden';
-                    visibilityChangeEvent = 'msvisibilitychange';
-                }
-
-                const handleVisibilityChange = () => {
-                    const wasVisible = this.isPageVisible;
-                    this.isPageVisible = !document[hiddenProperty];
-                    
-                    console.log('[Page Visibility]', this.isPageVisible ? 'visible' : 'hidden');
-                    
-                    if (this.isPageVisible && !wasVisible) {
-                        // Page became visible - restart timers and update immediately
-                        console.log('[Page Visibility] Page became visible, restarting timers');
-                        this.stopRealTimeUpdates();
-                        this.startRealTimeUpdates();
-                        this.updateDateTime();
-                        if (this.currentViewMode === 'today') {
-                            this.updateTimetable();
-                        }
-                    } else if (!this.isPageVisible && wasVisible) {
-                        // Page became hidden - stop timers to save battery
-                        console.log('[Page Visibility] Page became hidden, stopping timers');
-                        this.stopRealTimeUpdates();
-                    }
-                };
-
-                document.addEventListener(visibilityChangeEvent, handleVisibilityChange, false);
-            }
-
-            initMobileSupport() {
-                // Add touch events to keep page active on mobile devices
-                const touchEvents = ['touchstart', 'touchmove', 'touchend'];
-                touchEvents.forEach(eventType => {
-                    document.addEventListener(eventType, () => {
-                        this.lastUpdateTime = Date.now();
-                        if (this.isPageVisible && !this.realTimeUpdateInterval && !this.animationFrameId) {
-                            console.log('[Mobile Support] Touch detected, restarting timers');
-                            this.startRealTimeUpdates();
-                        }
-                    }, { passive: true });
-                });
-
-                // Check if timers are working every 5 seconds
-                setInterval(() => {
-                    if (this.isPageVisible && this.currentViewMode === 'today') {
-                        const now = Date.now();
-                        if (now - this.lastUpdateTime > 5000) {
-                            console.log('[Mobile Support] Timers appear frozen, restarting');
-                            this.stopRealTimeUpdates();
-                            this.startRealTimeUpdates();
-                        }
-                    }
-                }, 5000);
-            }
-
-            startRealTimeUpdates() {
-                if (!this.isPageVisible) return;
-                
-                // Stop any existing timers first
-                this.stopRealTimeUpdates();
-                
-                // Primary method: setInterval for consistent timing
-                this.realTimeUpdateInterval = setInterval(() => {
-                    if (this.isPageVisible) {
-                        this.lastUpdateTime = Date.now();
-                        this.updateDateTime();
-                        if (this.currentViewMode === 'today') {
-                            this.updateCountdown();
-                        }
-                    }
-                }, 1000);
-
-                // Fallback method: requestAnimationFrame for mobile browsers
-                const animationUpdate = () => {
-                    if (this.isPageVisible) {
-                        const now = Date.now();
-                        if (now - this.lastUpdateTime >= 1000) {
-                            this.lastUpdateTime = now;
-                            this.updateDateTime();
-                            if (this.currentViewMode === 'today') {
-                                this.updateCountdown();
-                            }
-                        }
-                        this.animationFrameId = requestAnimationFrame(animationUpdate);
-                    }
-                };
-                
-                // Use requestAnimationFrame as backup on mobile
-                if (/iPad|iPhone|iPod|Android/i.test(navigator.userAgent)) {
-                    console.log('[Mobile Support] Using requestAnimationFrame fallback for mobile device');
-                    this.animationFrameId = requestAnimationFrame(animationUpdate);
-                }
-            }
-
-            stopRealTimeUpdates() {
-                if (this.realTimeUpdateInterval) {
-                    clearInterval(this.realTimeUpdateInterval);
-                    this.realTimeUpdateInterval = null;
-                }
-                if (this.animationFrameId) {
-                    cancelAnimationFrame(this.animationFrameId);
-                    this.animationFrameId = null;
-                }
-            }
-
-            initNavigationButtons() {
-                // Separate method to initialize navigation buttons
-                const prevDayBtn = document.getElementById('prev-day-btn');
-                const nextDayBtn = document.getElementById('next-day-btn');
-                
-                if (prevDayBtn) {
-                    prevDayBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        this.goToPrevDay();
-                    });
-                } else {
-                    console.error('prev-day-btn not found!');
-                }
-                
-                if (nextDayBtn) {
-                    nextDayBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        this.goToNextDay();
-                    });
-                } else {
-                    console.error('next-day-btn not found!');
-                }
-            }
-
-            initDateSelection() {
-                const datePicker = document.getElementById('date-picker');
-                const viewSelectedDateBtn = document.getElementById('view-selected-date');
-                const backToTodayBtn = document.getElementById('back-to-today');
-    
-                // 只在初次載入時設值，不在每次切換 viewMode 時重設
-                if (datePicker && !datePicker.value) {
-                    const today = this.getTodayDateString();
-                    datePicker.value = today;
-                }
-
-                if (viewSelectedDateBtn) {
-                    viewSelectedDateBtn.addEventListener('click', () => {
-                        this.viewSelectedDate();
-                    });
-                }
-
-                if (backToTodayBtn) {
-                    backToTodayBtn.addEventListener('click', () => {
-                        this.switchView('today');
-                    });
-                }
-
-                if (datePicker) {
-                    datePicker.addEventListener('change', () => {
-                        this.updateSelectedDateInfo();
-                    });
-                }
-            }
-
-            switchView(viewMode) {
-                this.currentViewMode = viewMode;
-                
-                const viewButtons = document.querySelectorAll('.view-btn');
-                viewButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.view === viewMode);
-                });
-
-                const dateSelection = document.getElementById('date-selection');
-                const statusCards = document.querySelectorAll('.current-status-card, .countdown-card, .next-period-card');
-
-                if (viewMode === 'today') {
-                    dateSelection.classList.remove('active');
-                    statusCards.forEach(card => card.style.display = 'block');
-                    document.getElementById('schedule-title').textContent = '今日時間表';
-                    this.updateTimetable();
-                } else {
-                    dateSelection.classList.add('active');
-                    statusCards.forEach(card => card.style.display = 'none');
-                    this.updateSelectedDateInfo();
-                }
-            }
-
-            viewSelectedDate() {
-                const datePicker = document.getElementById('date-picker');
-                const selectedDate = datePicker.value;
-                
-                if (!selectedDate) {
-                    alert('請選擇一個日期');
-                    return;
-                }
-    
-                this.selectedDate = selectedDate;
-                this.updateTimetableForDate(selectedDate);
-                
-                document.getElementById('selected-date-info').style.display = 'block';
-            }
-
-            goToPrevDay() {
-                // Switch to date selection view if not already there
-                if (this.currentViewMode !== 'date-select') {
-                    this.switchView('date-select');
-                }
-                const datePicker = document.getElementById('date-picker');
-                const fallbackToday = this.getTodayDateString();
-                let currentDate = datePicker.value || fallbackToday;
-                // Get previous day
-                const date = new Date(currentDate + 'T00:00:00');
-                if (Number.isNaN(date.getTime())) {
-                    return;
-                }
-                date.setDate(date.getDate() - 1);
-                // Keep going back until we find a weekday
-                while (this.isWeekendDate(date)) {
-                    date.setDate(date.getDate() - 1);
-                }
-                const prevDate = this.formatDateToISO(date);
-                datePicker.value = prevDate;
-                this.selectedDate = prevDate;
-                this.viewSelectedDate();
-                this.updateSelectedDateInfo();
-            }
-
-            goToNextDay() {
-                // Switch to date selection view if not already there
-                if (this.currentViewMode !== 'date-select') {
-                    this.switchView('date-select');
-                }
-                const datePicker = document.getElementById('date-picker');
-                // 只以 datePicker.value 為基準
-                let baseDate = datePicker.value || this.getTodayDateString();
-                let dateArr = baseDate.split('-');
-                let dateObj = new Date(Number(dateArr[0]), Number(dateArr[1]) - 1, Number(dateArr[2]));
-                if (Number.isNaN(dateObj.getTime())) {
-                    return;
-                }
-                dateObj.setDate(dateObj.getDate() + 1);
-                // 跳過週末
-                while (this.isWeekendDate(dateObj)) {
-                    dateObj.setDate(dateObj.getDate() + 1);
-                }
-                const nextDate = this.formatDateToISO(dateObj);
-                datePicker.value = nextDate;
-                this.selectedDate = nextDate;
-                this.viewSelectedDate();
-                this.updateSelectedDateInfo();
-            }
-
-            updateSelectedDateInfo() {
-                const datePicker = document.getElementById('date-picker');
-                const selectedDate = datePicker.value;
-                
-                if (!selectedDate) return;
-
-                const date = new Date(selectedDate + 'T00:00:00');
-                const timetableType = this.getTimetableTypeForDate(selectedDate);
-                const dayCycle = this.calculateDayCycle(selectedDate);
-
-                document.getElementById('selected-date-display').textContent = 
-                    date.toLocaleDateString('zh-HK', { 
-                        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
-                    });
-                
-                document.getElementById('selected-day-cycle').textContent = 
-                    dayCycle ? `Day ${dayCycle}` : '無循環日';
-                
-                const typeText = this.getTimetableTypeText(timetableType);
-                document.getElementById('selected-timetable-type').textContent = typeText;
-            }
-
-            updateDateTime() {
-                const now = new Date();
-                this.lastUpdateTime = Date.now(); // Track last update for mobile timer monitoring
-                document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', { 
-                    month: 'long', day: 'numeric', weekday: 'long' 
-                });
-                document.getElementById('current-time').textContent = now.toLocaleTimeString('zh-HK', { 
-                    hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-            }
-
-            updateTimetable() {
-                const today = this.getTodayDateString();
-                
-                this.timetableType = this.getTimetableTypeForDate(today);
-                this.dayCycle = this.calculateDayCycle(today);
-                
-                this.updateCurrentPeriod();
-                this.updateScheduleDisplay();
-                this.updateSpecialNotice();
-            }
-
-            updateTimetableForDate(dateStr) {
-                this.timetableType = this.getTimetableTypeForDate(dateStr);
-                this.dayCycle = this.calculateDayCycle(dateStr);
-                
-                this.updateScheduleDisplayForDate(dateStr);
-                this.updateSpecialNotice();
-            }
-
-            getTimetableTypeForDate(dateStr) {
-                if (SPECIAL_DATES[dateStr]) {
-                    return `special${SPECIAL_DATES[dateStr]}`;
-                }
-
-                if (this.isNonSchoolDay(dateStr)) {
-                    return 'none';
-                }
-
-                const date = new Date(dateStr + 'T00:00:00');
-                if (!Number.isNaN(date.getTime()) && date.getDay() === 5) {
-                    return 'specialB';
-                }
-
-                return 'normal';
-            }
-
-            getTimetableTypeText(timetableType) {
-                switch(timetableType) {
-                    case 'specialA': return '特殊時間表A';
-                    case 'specialB': return '特殊時間表B';
-                    case 'specialC': return '特殊時間表C';
-                    case 'specialD': return '特殊時間表D';
-                    case 'specialE': return '特殊時間表E';
-                    case 'none': return '非上課日';
-                    default: return '正常時間表';
-                }
-            }
-
-            calculateDayCycle(dateStr) {
-                return DAY_ROTATION[dateStr] || null;
-            }
-
-            isNonSchoolDay(dateStr) {
-                const date = new Date(dateStr + 'T00:00:00');
-                if (Number.isNaN(date.getTime())) {
-                    return false;
-                }
-
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    return true;
-                }
-
-                const hasRotation = Boolean(DAY_ROTATION[dateStr]);
-                const hasSpecialTimetable = Boolean(SPECIAL_DATES[dateStr]);
-                return !hasRotation && !hasSpecialTimetable;
-            }
-
-            updateCurrentPeriod() {
-                if (this.timetableType === 'none') {
-                    this.currentPeriodInfo = {
-                        type: 'none',
-                        name: '今日沒有課程',
-                        start: '',
-                        end: '',
-                        subject: '非上課日'
-                    };
-                    this.nextPeriodInfo = null;
-                    this.updateCurrentDisplay();
-                    this.updateNextDisplay();
-                    this.updateCountdown();
-                    return;
-                }
-
-                const now = new Date();
-                const currentTimeStr = this.formatTimeForComparison(now);
-                const timetable = TIMETABLE_DATA[this.timetableType];
-                
-                if (!timetable) {
-                    this.currentPeriodInfo = {
-                        type: 'free',
-                        name: '時間表資料缺失',
-                        start: '',
-                        end: '',
-                        subject: '請稍後再試'
-                    };
-                    this.nextPeriodInfo = null;
-                    this.updateCurrentDisplay();
-                    this.updateNextDisplay();
-                    this.updateCountdown();
-                    return;
-                }
-                
-                this.currentPeriodInfo = this.findCurrentPeriod(currentTimeStr, timetable);
-                this.nextPeriodInfo = this.findNextPeriod(currentTimeStr, timetable);
-                
-                this.updateCurrentDisplay();
-                this.updateNextDisplay();
-                this.updateCountdown();
-            }
-
-            findCurrentPeriod(currentTimeStr, timetable) {
-                // Check courses
-                for (let i = 0; i < timetable.periods.length; i++) {
-                    const period = timetable.periods[i];
-                    if (this.isTimeInRange(currentTimeStr, period.start, period.end)) {
-                        const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[i + 1] || '課程';
-                        return {
-                            type: 'period',
-                            name: `第${i + 1}節`,
-                            start: period.start,
-                            end: period.end,
-                            subject: subject // Show full subject information
-                        };
-                    }
-                }
-
-                // Check breaks
-                for (const breakTime of timetable.breaks) {
-                    if (this.isTimeInRange(currentTimeStr, breakTime.start, breakTime.end)) {
-                        return {
-                            type: 'break',
-                            name: breakTime.name,
-                            start: breakTime.start,
-                            end: breakTime.end,
-                            subject: breakTime.name
-                        };
-                    }
-                }
-
-                // Check pre-school assembly
-                if (timetable.preSchoolAssembly && 
-                    this.isTimeInRange(currentTimeStr, timetable.preSchoolAssembly.start, timetable.preSchoolAssembly.end)) {
-                    return {
-                        type: 'assembly',
-                        name: '朝會',
-                        start: timetable.preSchoolAssembly.start,
-                        end: timetable.preSchoolAssembly.end,
-                        subject: 'Pre-School Assembly'
-                    };
-                }
-
-                return {
-                    type: 'free',
-                    name: '空堂時間',
-                    start: '',
-                    end: '',
-                    subject: '目前沒有課程'
-                };
-            }
-
-            findNextPeriod(currentTimeStr, timetable) {
-                const allTimeSlots = [];
-
-                // Add assembly
-                if (timetable.preSchoolAssembly) {
-                    allTimeSlots.push({
-                        ...timetable.preSchoolAssembly,
-                        type: 'assembly',
-                        periodNumber: 0
-                    });
-                }
-
-                // Add periods
-                timetable.periods.forEach((period, index) => {
-                    allTimeSlots.push({
-                        ...period,
-                        type: 'period',
-                        periodNumber: index + 1
-                    });
-                });
-
-                // Add breaks
-                timetable.breaks.forEach(breakTime => {
-                    allTimeSlots.push({
-                        ...breakTime,
-                        type: 'break',
-                        periodNumber: 0
-                    });
-                });
-
-                allTimeSlots.sort((a, b) => a.start.localeCompare(b.start));
-
-                for (const slot of allTimeSlots) {
-                    if (slot.start > currentTimeStr) {
-                        let subject = slot.name;
-                        if (slot.type === 'period') {
-                            subject = SUBJECT_SCHEDULE[this.dayCycle]?.[slot.periodNumber] || '課程';
-                            // Show full subject information
-                        }
-
-                        return {
-                            type: slot.type,
-                            name: slot.type === 'period' ? `第${slot.periodNumber}節` : 
-                                  slot.type === 'assembly' ? '朝會' : slot.name,
-                            start: slot.start,
-                            end: slot.end,
-                            subject: subject
-                        };
-                    }
-                }
-
-                return null;
-            }
-
-            updateCurrentDisplay() {
-                if (!this.currentPeriodInfo) return;
-
-                document.getElementById('current-period-name').textContent = this.currentPeriodInfo.name;
-                const periodTime = (this.currentPeriodInfo.start && this.currentPeriodInfo.end)
-                    ? `${this.currentPeriodInfo.start} - ${this.currentPeriodInfo.end}`
-                    : '--:-- - --:--';
-                document.getElementById('current-period-time').textContent = periodTime;
-                document.getElementById('current-subject').textContent = this.currentPeriodInfo.subject;
-            }
-
-            updateNextDisplay() {
-                if (this.timetableType === 'none') {
-                    document.getElementById('next-period-name').textContent = '今日沒有課程';
-                    document.getElementById('next-period-time').textContent = '';
-                    document.getElementById('next-subject').textContent = '';
-                    return;
-                }
-
-                if (this.nextPeriodInfo) {
-                    document.getElementById('next-period-name').textContent = this.nextPeriodInfo.name;
-                    document.getElementById('next-period-time').textContent = 
-                        `${this.nextPeriodInfo.start} - ${this.nextPeriodInfo.end}`;
-                    document.getElementById('next-subject').textContent = this.nextPeriodInfo.subject;
-                } else {
-                    document.getElementById('next-period-name').textContent = '今日課程已結束';
-                    document.getElementById('next-period-time').textContent = '';
-                    document.getElementById('next-subject').textContent = '';
-                }
-            }
-
-            updateCountdown() {
-                if (!this.currentPeriodInfo || !this.currentPeriodInfo.end) {
-                    document.getElementById('countdown-display').textContent = '--:--:--';
-                    document.getElementById('countdown-label').textContent = '';
-                    return;
-                }
-
-                const now = new Date();
-                const endTime = this.parseTimeToDate(this.currentPeriodInfo.end);
-                const timeDiff = endTime - now;
-
-                if (timeDiff <= 0) {
-                    document.getElementById('countdown-display').textContent = '00:00:00';
-                    document.getElementById('countdown-label').textContent = '時間已到';
-                    return;
-                }
-
-                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-                document.getElementById('countdown-display').textContent = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                
-                let label = '';
-                if (this.currentPeriodInfo.type === 'period') label = '下課倒計時';
-                else if (this.currentPeriodInfo.type === 'break') label = '小息結束倒計時';
-                else if (this.currentPeriodInfo.type === 'assembly') label = '朝會結束倒計時';
-                
-                document.getElementById('countdown-label').textContent = label;
-            }
-
-            updateScheduleDisplay() {
-                const container = document.getElementById('schedule-grid');
-                const dayIndicator = document.getElementById('day-indicator');
-                const scheduleTitle = document.getElementById('schedule-title');
-                
-                if (this.timetableType === 'none') {
-                    dayIndicator.textContent = '非上課日';
-                    scheduleTitle.textContent = '今日無課程';
-                    this.renderEmptySchedule(container, '今日沒有課程');
-                    return;
-                }
-
-                dayIndicator.textContent = this.dayCycle ? `Day ${this.dayCycle}` : '無循環日';
-
-                const timetable = TIMETABLE_DATA[this.timetableType];
-                const allItems = [];
-
-                if (!timetable) {
-                    scheduleTitle.textContent = '時間表載入失敗';
-                    this.renderEmptySchedule(container, '暫無時間表資料');
-                    return;
-                }
-
-                // Add assembly
-                if (timetable.preSchoolAssembly) {
-                    allItems.push({
-                        ...timetable.preSchoolAssembly,
-                        type: 'assembly',
-                        displayName: '朝會',
-                        subject: 'Pre-School Assembly'
-                    });
-                }
-
-                // Add periods
-                timetable.periods.forEach((period, index) => {
-                    const subject = SUBJECT_SCHEDULE[this.dayCycle]?.[index + 1] || '課程';
-                    allItems.push({
-                        ...period,
-                        type: 'period',
-                        displayName: `第${index + 1}節`,
-                        subject: subject
-                    });
-                });
-
-                // Add breaks
-                timetable.breaks.forEach(breakTime => {
-                    allItems.push({
-                        ...breakTime,
-                        type: 'break',
-                        displayName: breakTime.name,
-                        subject: breakTime.name
-                    });
-                });
-
-                allItems.sort((a, b) => a.start.localeCompare(b.start));
-
-                container.innerHTML = '';
-
-                const now = new Date();
-                const currentTimeStr = this.formatTimeForComparison(now);
-
-                allItems.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = `schedule-item ${item.type}`;
-                    
-                    if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
-                        itemElement.classList.add('current');
-                    }
-
-                    itemElement.innerHTML = `
-                        <div class="item-time">${item.start}<br>${item.end}</div>
-                        <div class="item-period">${item.displayName}</div>
-                        <div class="item-subject">${item.subject}</div>
-                    `;
-
-                    container.appendChild(itemElement);
-                });
-            }
-
-            updateScheduleDisplayForDate(dateStr) {
-                const container = document.getElementById('schedule-grid');
-                const dayIndicator = document.getElementById('day-indicator');
-                const scheduleTitle = document.getElementById('schedule-title');
-                
-                const date = new Date(dateStr + 'T00:00:00');
-                const formattedDate = date.toLocaleDateString('zh-HK', { 
-                    month: 'long', day: 'numeric', weekday: 'long' 
-                });
-                
-                dayIndicator.textContent = this.dayCycle ? `Day ${this.dayCycle}` : '無循環日';
-                scheduleTitle.textContent = `${formattedDate} 時間表`;
-
-                if (this.timetableType === 'none') {
-                    dayIndicator.textContent = '非上課日';
-                    scheduleTitle.textContent = `${formattedDate} 無課程`;
-                    this.renderEmptySchedule(container, '該日沒有課程');
-                    return;
-                }
-                
-                const timetable = TIMETABLE_DATA[this.timetableType];
-                const allItems = [];
-
-                if (!timetable) {
-                    scheduleTitle.textContent = `${formattedDate} 時間表暫未可用`;
-                    this.renderEmptySchedule(container, '暫無時間表資料');
-                    return;
-                }
-
-                // Add assembly
-                if (timetable.preSchoolAssembly) {
-                    allItems.push({
-                        ...timetable.preSchoolAssembly,
-                        type: 'assembly',
-                        displayName: '朝會',
-                        subject: 'Pre-School Assembly'
-                    });
-                }
-
-                // Add periods
-                timetable.periods.forEach((period, index) => {
-                    const subject = this.dayCycle ? (SUBJECT_SCHEDULE[this.dayCycle]?.[index + 1] || '課程') : '課程';
-                    allItems.push({
-                        ...period,
-                        type: 'period',
-                        displayName: `第${index + 1}節`,
-                        subject: subject
-                    });
-                });
-
-                // Add breaks
-                timetable.breaks.forEach(breakTime => {
-                    allItems.push({
-                        ...breakTime,
-                        type: 'break',
-                        displayName: breakTime.name,
-                        subject: breakTime.name
-                    });
-                });
-
-                allItems.sort((a, b) => a.start.localeCompare(b.start));
-
-                container.innerHTML = '';
-
-                allItems.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = `schedule-item ${item.type}`;
-
-                    itemElement.innerHTML = `
-                        <div class="item-time">${item.start}<br>${item.end}</div>
-                        <div class="item-period">${item.displayName}</div>
-                        <div class="item-subject">${item.subject}</div>
-                    `;
-
-                    container.appendChild(itemElement);
-                });
-            }
-
-            updateSpecialNotice() {
-                const noticeElement = document.getElementById('special-notice');
-                
-                let noticeText = '';
-                if (this.timetableType === 'specialA') {
-                    noticeText = '特殊時間表A - 學期初安排';
-                } else if (this.timetableType === 'specialB') {
-                    noticeText = '特殊時間表B';
-                } else if (this.timetableType === 'specialC') {
-                    noticeText = '特殊時間表C';
-                } else if (this.timetableType === 'specialD') {
-                    noticeText = '特殊時間表D';
-                } else if (this.timetableType === 'specialE') {
-                    noticeText = '特殊時間表E';
-                } else if (this.timetableType === 'none') {
-                    noticeText = '今日無課程';
-                } else {
-                    noticeText = '正常時間表';
-                }
-                
-                noticeElement.textContent = noticeText;
-            }
-
-            renderEmptySchedule(container, message) {
-                container.innerHTML = `
-                    <div class="schedule-empty">${message}</div>
-                `;
-            }
-
-            // Utility methods
-            getTodayDateString() {
-                return this.formatDateToISO(new Date());
-            }
-
-            formatDateToISO(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            }
-
-            isWeekendDate(date) {
-                const day = date.getDay();
-                return day === 0 || day === 6;
-            }
-
-            isTimeInRange(current, start, end) {
-                return current >= start && current <= end;
-            }
-
-            formatTimeForComparison(date) {
-                return date.toTimeString().substring(0, 5);
-            }
-
-            parseTimeToDate(timeStr) {
-                const today = new Date();
-                const [hours, minutes] = timeStr.split(':');
-                today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                return today;
-            }
-        }
-
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', () => {
-            new TimetableApp();
-        });
-    </script>
+    <script src="api.js"></script>
+    <script src="notifications.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
