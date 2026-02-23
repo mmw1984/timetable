@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="學校實時時間表應用，支援離線使用和課程提醒">
+    <meta name="theme-color" content="#007aff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="時間表">
     <title>實時時間表</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E📅%3C/text%3E%3C/svg%3E">
     <style>
         :root {
             --font-family-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -574,7 +581,112 @@
             outline: 2px solid var(--accent-color);
             outline-offset: 2px;
         }
-    </style>
+
+        /* Skeleton loading screens */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                var(--bg-color) 0%,
+                var(--border-color) 50%,
+                var(--bg-color) 100%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-text {
+            height: 1em;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+
+        .skeleton-item {
+            height: 80px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        /* PWA Install prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: var(--padding-md);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            display: none;
+            align-items: center;
+            gap: var(--gap-md);
+            max-width: 90%;
+            z-index: 1000;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-prompt-text {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        .install-prompt-buttons {
+            display: flex;
+            gap: var(--gap-sm);
+        }
+
+        /* Offline indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff3b30;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .offline-indicator.show {
+            display: flex;
+        }
+
+        .offline-indicator.online {
+            background: #34c759;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+</style>
 </head>
 <body>
     <div class="container">
@@ -594,6 +706,7 @@
                 </div>
                 
                 <button class="theme-toggle" id="theme-toggle">🌙</button>
+                <button class="theme-toggle" id="notification-toggle" title="啟用課程提醒">🔔</button>
                 <div class="datetime">
                     <div class="current-date" id="current-date">載入中...</div>
                     <div class="current-time" id="current-time">--:--:--</div>
@@ -666,6 +779,24 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div class="install-prompt" id="install-prompt">
+        <div class="install-prompt-text">
+            <strong>安裝應用程式</strong><br>
+            將時間表加到主螢幕，隨時查看課程資訊
+        </div>
+        <div class="install-prompt-buttons">
+            <button class="btn primary" id="install-btn">安裝</button>
+            <button class="btn" id="dismiss-install">稍後</button>
+        </div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offline-indicator">
+        <span>🔴</span>
+        <span>離線模式</span>
     </div>
 
     <script src="timetable-data.js"></script>
@@ -1381,9 +1512,13 @@
                 allItems.forEach(item => {
                     const itemElement = document.createElement('div');
                     itemElement.className = `schedule-item ${item.type}`;
-                    
+
                     if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
                         itemElement.classList.add('current');
+                        // Auto-scroll to current item after a short delay
+                        setTimeout(() => {
+                            itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 100);
                     }
 
                     itemElement.innerHTML = `
@@ -1539,7 +1674,294 @@
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
             new TimetableApp();
+
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('[App] Service Worker registered:', registration);
+
+                        // Check for updates periodically
+                        setInterval(() => {
+                            registration.update();
+                        }, 60 * 60 * 1000); // Check every hour
+                    })
+                    .catch((error) => {
+                        console.error('[App] Service Worker registration failed:', error);
+                    });
+            }
+
+            // Initialize notification system
+            initNotificationSystem();
+
+            // Initialize PWA install prompt
+            initInstallPrompt();
+
+            // Initialize offline/online detection
+            initOfflineDetection();
         });
+
+        function initOfflineDetection() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+
+            function updateOnlineStatus() {
+                if (navigator.onLine) {
+                    offlineIndicator.classList.add('online');
+                    offlineIndicator.querySelector('span:first-child').textContent = '🟢';
+                    offlineIndicator.querySelector('span:last-child').textContent = '已連線';
+                    offlineIndicator.classList.add('show');
+
+                    // Hide after 3 seconds when back online
+                    setTimeout(() => {
+                        offlineIndicator.classList.remove('show');
+                    }, 3000);
+                } else {
+                    offlineIndicator.classList.remove('online');
+                    offlineIndicator.querySelector('span:first-child').textContent = '🔴';
+                    offlineIndicator.querySelector('span:last-child').textContent = '離線模式';
+                    offlineIndicator.classList.add('show');
+                }
+            }
+
+            // Listen for online/offline events
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+
+            // Check initial state
+            if (!navigator.onLine) {
+                updateOnlineStatus();
+            }
+        }
+
+        let deferredPrompt;
+
+        function initInstallPrompt() {
+            const installPrompt = document.getElementById('install-prompt');
+            const installBtn = document.getElementById('install-btn');
+            const dismissBtn = document.getElementById('dismiss-install');
+
+            // Listen for the beforeinstallprompt event
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent the mini-infobar from appearing
+                e.preventDefault();
+                // Stash the event so it can be triggered later
+                deferredPrompt = e;
+
+                // Check if user has previously dismissed the prompt
+                const dismissed = localStorage.getItem('install-prompt-dismissed');
+                const dismissedTime = parseInt(dismissed || '0', 10);
+                const now = Date.now();
+
+                // Show prompt if not dismissed or dismissed more than 7 days ago
+                if (!dismissed || (now - dismissedTime) > 7 * 24 * 60 * 60 * 1000) {
+                    setTimeout(() => {
+                        installPrompt.classList.add('show');
+                    }, 3000); // Show after 3 seconds
+                }
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) {
+                    return;
+                }
+
+                // Show the install prompt
+                deferredPrompt.prompt();
+
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+
+                console.log(`User response to install prompt: ${outcome}`);
+
+                // Hide the prompt
+                installPrompt.classList.remove('show');
+
+                // Clear the deferredPrompt
+                deferredPrompt = null;
+            });
+
+            dismissBtn.addEventListener('click', () => {
+                installPrompt.classList.remove('show');
+                localStorage.setItem('install-prompt-dismissed', Date.now().toString());
+            });
+
+            // Listen for app installed event
+            window.addEventListener('appinstalled', () => {
+                console.log('[PWA] App was installed');
+                installPrompt.classList.remove('show');
+            });
+        }
+
+        function initNotificationSystem() {
+            const notificationToggle = document.getElementById('notification-toggle');
+
+            // Check current notification permission
+            updateNotificationButtonState();
+
+            // Auto-schedule notifications if permission is granted
+            if (Notification.permission === 'granted') {
+                // Wait for service worker to be ready
+                navigator.serviceWorker.ready.then(() => {
+                    // Check if we need to schedule notifications for today
+                    const lastScheduledDate = localStorage.getItem('last-notification-schedule-date');
+                    const today = new Date().toISOString().split('T')[0];
+
+                    if (lastScheduledDate !== today) {
+                        console.log('[Notification] Auto-scheduling notifications for new day');
+                        scheduleNotificationsForToday();
+                        localStorage.setItem('last-notification-schedule-date', today);
+                    }
+                });
+            }
+
+            notificationToggle.addEventListener('click', async () => {
+                try {
+                    if (!('Notification' in window)) {
+                        alert('此瀏覽器不支援通知功能');
+                        return;
+                    }
+
+                    if (!('serviceWorker' in navigator)) {
+                        alert('此瀏覽器不支援後台通知');
+                        return;
+                    }
+
+                    let permission = Notification.permission;
+
+                    if (permission === 'default') {
+                        permission = await Notification.requestPermission();
+                    }
+
+                    if (permission === 'granted') {
+                        notificationToggle.textContent = '🔔';
+                        notificationToggle.title = '課程提醒已啟用';
+
+                        // Show confirmation
+                        new Notification('課程提醒已啟用', {
+                            body: '您將在每堂課前5分鐘收到提醒',
+                            icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect fill="%23007aff" width="192" height="192" rx="48"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="120" fill="white" font-family="sans-serif"%3E📅%3C/text%3E%3C/svg%3E'
+                        });
+
+                        // Schedule notifications for today
+                        scheduleNotificationsForToday();
+
+                        // Remember that we scheduled today
+                        const today = new Date().toISOString().split('T')[0];
+                        localStorage.setItem('last-notification-schedule-date', today);
+                    } else if (permission === 'denied') {
+                        alert('通知權限已被拒絕。請在瀏覽器設定中允許通知。');
+                    }
+
+                    updateNotificationButtonState();
+                } catch (error) {
+                    console.error('[Notification] Error:', error);
+                    alert('啟用通知時發生錯誤');
+                }
+            });
+        }
+
+        function updateNotificationButtonState() {
+            const notificationToggle = document.getElementById('notification-toggle');
+
+            if (!('Notification' in window)) {
+                notificationToggle.style.display = 'none';
+                return;
+            }
+
+            const permission = Notification.permission;
+
+            if (permission === 'granted') {
+                notificationToggle.textContent = '🔔';
+                notificationToggle.title = '課程提醒已啟用';
+                notificationToggle.style.opacity = '1';
+            } else if (permission === 'denied') {
+                notificationToggle.textContent = '🔕';
+                notificationToggle.title = '通知權限已被拒絕';
+                notificationToggle.style.opacity = '0.5';
+            } else {
+                notificationToggle.textContent = '🔔';
+                notificationToggle.title = '點擊啟用課程提醒';
+                notificationToggle.style.opacity = '0.5';
+            }
+        }
+
+        async function scheduleNotificationsForToday() {
+            if (Notification.permission !== 'granted') {
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const timetableType = getTimetableTypeForDate(today);
+
+            if (timetableType === 'none') {
+                return;
+            }
+
+            const timetable = TIMETABLE_DATA[timetableType];
+            const dayCycle = DAY_ROTATION[today];
+
+            if (!timetable) {
+                return;
+            }
+
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+
+            // Schedule notifications for each period (5 minutes before)
+            timetable.periods.forEach((period, index) => {
+                const [startHour, startMinute] = period.start.split(':').map(Number);
+                const periodStartTime = startHour * 60 + startMinute;
+                const notificationTime = periodStartTime - 5; // 5 minutes before
+
+                if (notificationTime > currentTime) {
+                    const subject = dayCycle ? (SUBJECT_SCHEDULE[dayCycle]?.[index + 1] || '課程') : '課程';
+                    const notificationDate = new Date(now);
+                    notificationDate.setHours(Math.floor(notificationTime / 60));
+                    notificationDate.setMinutes(notificationTime % 60);
+                    notificationDate.setSeconds(0);
+
+                    const notificationId = `${today}-period-${index + 1}`;
+
+                    // Send message to service worker
+                    if (navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'SCHEDULE_NOTIFICATION',
+                            id: notificationId,
+                            title: `第${index + 1}節課程即將開始`,
+                            body: `${subject} (${period.start} - ${period.end})`,
+                            timestamp: notificationDate.getTime()
+                        });
+
+                        console.log(`[Notification] Scheduled: ${subject} at ${notificationDate.toLocaleTimeString()}`);
+                    }
+                }
+            });
+
+            console.log('[Notification] All notifications scheduled for today');
+        }
+
+        function getTimetableTypeForDate(dateStr) {
+            if (SPECIAL_DATES[dateStr]) {
+                return `special${SPECIAL_DATES[dateStr]}`;
+            }
+
+            const date = new Date(dateStr + 'T00:00:00');
+            const dayOfWeek = date.getDay();
+
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                return 'none';
+            }
+
+            if (!Number.isNaN(date.getTime()) && dayOfWeek === 5) {
+                return 'specialB';
+            }
+
+            if (!DAY_ROTATION[dateStr] && !SPECIAL_DATES[dateStr]) {
+                return 'none';
+            }
+
+            return 'normal';
+        }
     </script>
 </body>
 </html>
