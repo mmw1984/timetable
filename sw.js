@@ -1,10 +1,14 @@
 // Service Worker for Timetable PWA
 const CACHE_NAME = 'timetable-v1';
 const ASSETS_TO_CACHE = [
+  '/',
   '/index.html',
   '/timetable-data.js',
   '/manifest.json'
 ];
+
+// Notification queue to store scheduled notifications
+let notificationQueue = [];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -36,7 +40,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - serve from cache first, fallback to network
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
@@ -44,6 +48,18 @@ self.addEventListener('fetch', (event) => {
         // Cache hit - return response
         if (response) {
           console.log('[SW] Serving from cache:', event.request.url);
+
+          // Update cache in background for next time
+          fetch(event.request).then((freshResponse) => {
+            if (freshResponse && freshResponse.status === 200) {
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, freshResponse);
+              });
+            }
+          }).catch(() => {
+            // Network failed, but we have cached version
+          });
+
           return response;
         }
 
@@ -65,6 +81,15 @@ self.addEventListener('fetch', (event) => {
             });
 
           return response;
+        }).catch(() => {
+          // Return offline page or error
+          return new Response('Offline - Please check your connection', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
+          });
         });
       })
   );
@@ -78,7 +103,19 @@ self.addEventListener('notificationclick', (event) => {
 
   // Open the app when notification is clicked
   event.waitUntil(
-    clients.openWindow('/')
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // If app is already open, focus it
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Otherwise open a new window
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
   );
 });
 
@@ -87,25 +124,65 @@ self.addEventListener('message', (event) => {
   console.log('[SW] Message received:', event.data);
 
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
-    const { title, body, timestamp } = event.data;
+    const { title, body, timestamp, id } = event.data;
     const delay = timestamp - Date.now();
 
     if (delay > 0) {
-      setTimeout(() => {
+      // Store in queue
+      const timeoutId = setTimeout(() => {
         self.registration.showNotification(title, {
           body: body,
-          icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect fill="%23007aff" width="192" height="192" rx="48"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="120" fill="white" font-family="sans-serif"%3E📅%3C/text%3E%3C/svg%3E',
-          badge: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"%3E%3Ccircle fill="%23007aff" cx="48" cy="48" r="48"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="60" fill="white" font-family="sans-serif"%3E📅%3C/text%3E%3C/svg%3E',
+          icon: '/manifest.json',
+          badge: '/manifest.json',
           vibrate: [200, 100, 200],
-          tag: 'timetable-notification',
-          requireInteraction: false
+          tag: `timetable-${id || Date.now()}`,
+          requireInteraction: false,
+          data: {
+            url: '/',
+            timestamp: timestamp
+          }
         });
+
+        // Remove from queue
+        notificationQueue = notificationQueue.filter(n => n.id !== id);
       }, delay);
+
+      notificationQueue.push({
+        id: id || Date.now(),
+        title,
+        body,
+        timestamp,
+        timeoutId
+      });
+
+      console.log(`[SW] Scheduled notification for ${new Date(timestamp).toLocaleString()}`);
     }
+  }
+
+  if (event.data && event.data.type === 'CANCEL_NOTIFICATIONS') {
+    // Clear all scheduled notifications
+    notificationQueue.forEach(notification => {
+      clearTimeout(notification.timeoutId);
+    });
+    notificationQueue = [];
+    console.log('[SW] Cancelled all scheduled notifications');
   }
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'GET_NOTIFICATION_QUEUE') {
+    // Send back the notification queue
+    event.ports[0].postMessage({
+      type: 'NOTIFICATION_QUEUE',
+      queue: notificationQueue.map(n => ({
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        timestamp: n.timestamp
+      }))
+    });
   }
 });
 
@@ -125,3 +202,17 @@ async function updateTimetableCache() {
     console.error('[SW] Failed to update timetable cache:', error);
   }
 }
+
+// Background sync for offline actions (if supported)
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-notifications') {
+    event.waitUntil(syncNotifications());
+  }
+});
+
+async function syncNotifications() {
+  console.log('[SW] Syncing notifications...');
+  // This can be used to sync any pending notification schedules
+  // when the device comes back online
+}
+

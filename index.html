@@ -1718,6 +1718,22 @@
             // Check current notification permission
             updateNotificationButtonState();
 
+            // Auto-schedule notifications if permission is granted
+            if (Notification.permission === 'granted') {
+                // Wait for service worker to be ready
+                navigator.serviceWorker.ready.then(() => {
+                    // Check if we need to schedule notifications for today
+                    const lastScheduledDate = localStorage.getItem('last-notification-schedule-date');
+                    const today = new Date().toISOString().split('T')[0];
+
+                    if (lastScheduledDate !== today) {
+                        console.log('[Notification] Auto-scheduling notifications for new day');
+                        scheduleNotificationsForToday();
+                        localStorage.setItem('last-notification-schedule-date', today);
+                    }
+                });
+            }
+
             notificationToggle.addEventListener('click', async () => {
                 try {
                     if (!('Notification' in window)) {
@@ -1748,6 +1764,10 @@
 
                         // Schedule notifications for today
                         scheduleNotificationsForToday();
+
+                        // Remember that we scheduled today
+                        const today = new Date().toISOString().split('T')[0];
+                        localStorage.setItem('last-notification-schedule-date', today);
                     } else if (permission === 'denied') {
                         alert('通知權限已被拒絕。請在瀏覽器設定中允許通知。');
                     }
@@ -1820,17 +1840,24 @@
                     notificationDate.setMinutes(notificationTime % 60);
                     notificationDate.setSeconds(0);
 
+                    const notificationId = `${today}-period-${index + 1}`;
+
                     // Send message to service worker
                     if (navigator.serviceWorker.controller) {
                         navigator.serviceWorker.controller.postMessage({
                             type: 'SCHEDULE_NOTIFICATION',
+                            id: notificationId,
                             title: `第${index + 1}節課程即將開始`,
                             body: `${subject} (${period.start} - ${period.end})`,
                             timestamp: notificationDate.getTime()
                         });
+
+                        console.log(`[Notification] Scheduled: ${subject} at ${notificationDate.toLocaleTimeString()}`);
                     }
                 }
             });
+
+            console.log('[Notification] All notifications scheduled for today');
         }
 
         function getTimetableTypeForDate(dateStr) {
