@@ -647,6 +647,45 @@
             display: flex;
             gap: var(--gap-sm);
         }
+
+        /* Offline indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff3b30;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .offline-indicator.show {
+            display: flex;
+        }
+
+        .offline-indicator.online {
+            background: #34c759;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 </style>
 </head>
 <body>
@@ -752,6 +791,12 @@
             <button class="btn primary" id="install-btn">安裝</button>
             <button class="btn" id="dismiss-install">稍後</button>
         </div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offline-indicator">
+        <span>🔴</span>
+        <span>離線模式</span>
     </div>
 
     <script src="timetable-data.js"></script>
@@ -1651,7 +1696,42 @@
 
             // Initialize PWA install prompt
             initInstallPrompt();
+
+            // Initialize offline/online detection
+            initOfflineDetection();
         });
+
+        function initOfflineDetection() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+
+            function updateOnlineStatus() {
+                if (navigator.onLine) {
+                    offlineIndicator.classList.add('online');
+                    offlineIndicator.querySelector('span:first-child').textContent = '🟢';
+                    offlineIndicator.querySelector('span:last-child').textContent = '已連線';
+                    offlineIndicator.classList.add('show');
+
+                    // Hide after 3 seconds when back online
+                    setTimeout(() => {
+                        offlineIndicator.classList.remove('show');
+                    }, 3000);
+                } else {
+                    offlineIndicator.classList.remove('online');
+                    offlineIndicator.querySelector('span:first-child').textContent = '🔴';
+                    offlineIndicator.querySelector('span:last-child').textContent = '離線模式';
+                    offlineIndicator.classList.add('show');
+                }
+            }
+
+            // Listen for online/offline events
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+
+            // Check initial state
+            if (!navigator.onLine) {
+                updateOnlineStatus();
+            }
+        }
 
         let deferredPrompt;
 
