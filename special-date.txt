@@ -1,0 +1,115 @@
+Here is the text from the image you provided.
+
+### Special Timetable A
+**Special Timetable Arrangement for 3-10/9**
+
+| Period / Time | Time start | Time end | Duration (min) |
+| --- | --- | --- | --- |
+| 1st | 8:30 | 9:00 | 30 |
+| 2nd | 9:00 | 9:30 | 30 |
+| Recess | 9:30 | 9:50 | 20 |
+| 3rd | 9:50 | 10:20 | 30 |
+| 4th | 10:20 | 10:50 | 30 |
+| Recess | 10:50 | 11:05 | 15 |
+| 5th | 11:05 | 11:35 | 30 |
+| 6th | 11:35 | 12:05 | 30 |
+| Lunch | 12:05 | 1:10 | 65 |
+| Roll-call | 1:10 | 1:15 | 5 |
+| 7th | 1:15 | 1:45 | 30 |
+| 8th | 1:45 | 2:15 | 30 |
+
+### Special Timetable B
+**Inauguration Ceremony, Chinese Culture Week, Easter Service, Speech Day Preparation, Study Fortnight**
+
+| Period / Time | Time start | Time end | Duration (min) |
+| --- | --- | --- | --- |
+| 1st | 8:30 | 9:05 | 35 |
+| 2nd | 9:05 | 9:40 | 35 |
+| Recess | 9:40 | 10:00 | 20 |
+| 3rd | 10:00 | 10:35 | 35 |
+| 4th | 10:35 | 11:10 | 35 |
+| Recess | 11:10 | 11:25 | 15 |
+| 5th | 11:25 | 12:00 | 35 |
+| 6th | 12:00 | 12:35 | 35 |
+| Lunch | 12:35 | 1:40 | 65 |
+| Roll-call | 1:40 | 1:45 | 5 |
+| 7th | 1:45 | 2:20 | 35 |
+| 8th | 2:20 | 2:55 | 35 |
+| Assembly | 2:55 | 3:45 | 50 |
+
+### Special Timetable C
+**Evangelical Gathering, Rope-skipping Competition, Farewell to S6 Graduates, 2026-2027 SA Consultation Session**
+
+| Period / Time | Time start | Time end | Duration (min) |
+| --- | --- | --- | --- |
+| 1st | 8:30 | 9:00 | 30 |
+| 2nd | 9:00 | 9:30 | 30 |
+| Recess | 9:30 | 9:50 | 20 |
+| 3rd | 9:50 | 10:20 | 30 |
+| 4th | 10:20 | 10:50 | 30 |
+| Recess | 10:50 | 11:05 | 15 |
+| 5th | 11:05 | 11:35 | 30 |
+| 6th | 11:35 | 12:05 | 30 |
+| Lunch | 12:05 | 1:10 | 65 |
+| Roll-call | 1:10 | 1:15 | 5 |
+| 7th | 1:15 | 1:45 | 30 |
+| 8th | 1:45 | 2:15 | 30 |
+| Long Assembly | 2:15 | 3:45 | 90 |
+
+### Special Timetable D
+**House Meeting**
+
+| Period / Time | Time start | Time end | Duration (min) |
+| --- | --- | --- | --- |
+| 1st | 8:30 | 9:10 | 40 |
+| 2nd | 9:10 | 9:50 | 40 |
+| Recess | 9:50 | 10:10 | 20 |
+| 3rd | 10:10 | 10:50 | 40 |
+| 4th | 10:50 | 11:30 | 40 |
+| Lunch / House Meeting | 11:30 | 1:05 | 95 |
+| Roll-call | 1:05 | 1:10 | 5 |
+| 5th | 1:10 | 1:45 | 35 |
+| 6th | 1:45 | 2:20 | 35 |
+| Recess | 2:20 | 2:35 | 15 |
+| 7th | 2:35 | 3:10 | 35 |
+| 8th | 3:10 | 3:45 | 35 |
+
+### Special Timetable E
+**Information Day Preparation**
+
+| Period / Time | Time start | Time end | Duration (min) |
+| --- | --- | --- | --- |
+| 1st | 8:30 | 9:00 | 30 |
+| 2nd | 9:00 | 9:30 | 30 |
+| Recess | 9:30 | 9:45 | 15 |
+| 3rd | 9:45 | 10:15 | 30 |
+| 4th | 10:15 | 10:45 | 30 |
+| Recess | 10:45 | 10:55 | 10 |
+| 5th | 10:55 | 11:25 | 30 |
+| 6th | 11:25 | 11:55 | 30 |
+| Recess | 11:55 | 12:05 | 10 |
+| 7th | 12:05 | 12:35 | 30 |
+| 8th | 12:35 | 1:05 | 30 |
+
+### Dates and Events
+
+| Dates | Events | Special Timetable |
+| --- | --- | --- |
+| 03 - 10/09/2025 | / | A |
+| 12/09/2025 | Inauguration Ceremony (2:55 p.m.) | B |
+| 26/09/2025 | Replacement for National Security Education Day | Normal |
+| 14/11/2025 | Evangelical Gathering (2:15 p.m.) | C |
+| 28/11/2025 | Information Day Preparation | E |
+| 12/12/2025 | Rope-skipping Competition (p.m.) | C |
+| 03/02/2026 | Farewell to S6 Graduates (2:15 p.m.) | C |
+| 06/02/2026 | Replacement for Farewell to S6 Graduates | Normal |
+| 12/02/2026 | Chinese Culture Week (2:55 p.m.) | B |
+| 26/03/2026 | Easter Service (2:55 p.m.) | B |
+| 09/04/2026 | / | Normal |
+| 17/04/2026 | Going over Second Term Uniform Test | Normal |
+| 30/04/2026 | 2026-2027 SA Consultation Session (2:15 p.m.) | C |
+| 08/05/2026 | House Meeting (Lunch Time) | D |
+| 15/05/2026 | Speech Day Preparation | B |
+| 19/05 - 04/06/2026 | Study Fortnight | B |
+
+Notice: all fridays should be using special timetable b
