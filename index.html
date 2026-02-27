@@ -460,6 +460,31 @@
             font-weight: 500;
         }
 
+        .future-days-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .future-day-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+        }
+
+        .future-day-label {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: var(--accent-color);
+            min-width: 52px;
+        }
+
+        .future-day-date {
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
         .schedule-empty {
             text-align: center;
             padding: var(--padding-lg);
@@ -765,6 +790,14 @@
                 <!-- Special Notice -->
                 <div class="card notice-card">
                     <div class="notice" id="special-notice">載入中...</div>
+                </div>
+
+                <!-- Future Days -->
+                <div class="card future-days-card">
+                    <div class="card-label">即將到來的循環日</div>
+                    <div class="future-days-list" id="future-days-list">
+                        <!-- 動態內容 -->
+                    </div>
                 </div>
             </div>
 
@@ -1179,6 +1212,7 @@
                 this.updateCurrentPeriod();
                 this.updateScheduleDisplay();
                 this.updateSpecialNotice();
+                this.updateFutureDays();
             }
 
             updateTimetableForDate(dateStr) {
@@ -1315,7 +1349,7 @@
                     this.isTimeInRange(currentTimeStr, timetable.preSchoolAssembly.start, timetable.preSchoolAssembly.end)) {
                     return {
                         type: 'assembly',
-                        name: '朝會',
+                        name: '早會',
                         start: timetable.preSchoolAssembly.start,
                         end: timetable.preSchoolAssembly.end,
                         subject: 'Pre-School Assembly'
@@ -1374,7 +1408,7 @@
                         return {
                             type: slot.type,
                             name: slot.type === 'period' ? `第${slot.periodNumber}節` : 
-                                  slot.type === 'assembly' ? '朝會' : slot.name,
+                                  slot.type === 'assembly' ? '早會' : slot.name,
                             start: slot.start,
                             end: slot.end,
                             subject: subject
@@ -1443,7 +1477,7 @@
                 let label = '';
                 if (this.currentPeriodInfo.type === 'period') label = '下課倒計時';
                 else if (this.currentPeriodInfo.type === 'break') label = '小息結束倒計時';
-                else if (this.currentPeriodInfo.type === 'assembly') label = '朝會結束倒計時';
+                else if (this.currentPeriodInfo.type === 'assembly') label = '早會結束倒計時';
                 
                 document.getElementById('countdown-label').textContent = label;
             }
@@ -1476,7 +1510,7 @@
                     allItems.push({
                         ...timetable.preSchoolAssembly,
                         type: 'assembly',
-                        displayName: '朝會',
+                        displayName: '早會',
                         subject: 'Pre-School Assembly'
                     });
                 }
@@ -1565,7 +1599,7 @@
                     allItems.push({
                         ...timetable.preSchoolAssembly,
                         type: 'assembly',
-                        displayName: '朝會',
+                        displayName: '早會',
                         subject: 'Pre-School Assembly'
                     });
                 }
@@ -1630,6 +1664,40 @@
                 }
                 
                 noticeElement.textContent = noticeText;
+            }
+
+            updateFutureDays() {
+                const container = document.getElementById('future-days-list');
+                if (!container) return;
+
+                const today = new Date();
+                const foundDays = {};
+                let html = '';
+                const maxSearch = 60;
+
+                for (let i = 1; i <= maxSearch; i++) {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() + i);
+                    const dateStr = this.formatDateToISO(d);
+                    const day = DAY_ROTATION[dateStr];
+                    if (day && !foundDays[day]) {
+                        foundDays[day] = { date: d, dateStr: dateStr };
+                        if (Object.keys(foundDays).length === 6) break;
+                    }
+                }
+
+                for (let day = 1; day <= 6; day++) {
+                    if (foundDays[day]) {
+                        const d = foundDays[day].date;
+                        const dateDisplay = d.toLocaleDateString('zh-HK', { month: 'short', day: 'numeric', weekday: 'short' });
+                        html += `<div class="future-day-row">
+                            <span class="future-day-label">Day ${day}</span>
+                            <span class="future-day-date">${dateDisplay}</span>
+                        </div>`;
+                    }
+                }
+
+                container.innerHTML = html || '<div style="color: var(--text-color-secondary); font-size: 0.9em;">暫無即將到來的循環日資料</div>';
             }
 
             renderEmptySchedule(container, message) {

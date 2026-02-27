@@ -32,6 +32,11 @@ window.TIMETABLE_DATA = {
     
     // 特殊時間表A (3-10/9)
     specialA: {
+        preSchoolAssembly: {
+            start: "08:15",
+            end: "08:30",
+            name: "早會"
+        },
         periods: [
             { start: "08:30", end: "09:00" },
             { start: "09:00", end: "09:30" },
@@ -52,6 +57,11 @@ window.TIMETABLE_DATA = {
     
     // 特殊時間表B (所有星期五和特殊活動)
     specialB: {
+        preSchoolAssembly: {
+            start: "08:15",
+            end: "08:30",
+            name: "早會"
+        },
         periods: [
             { start: "08:30", end: "09:05" },
             { start: "09:05", end: "09:40" },
@@ -73,6 +83,11 @@ window.TIMETABLE_DATA = {
     
     // 特殊時間表C (某些特殊活動)
     specialC: {
+        preSchoolAssembly: {
+            start: "08:15",
+            end: "08:30",
+            name: "早會"
+        },
         periods: [
             { start: "08:30", end: "09:00" },
             { start: "09:00", end: "09:30" },
@@ -94,6 +109,11 @@ window.TIMETABLE_DATA = {
     
     // 特殊時間表D (社際聚會)
     specialD: {
+        preSchoolAssembly: {
+            start: "08:15",
+            end: "08:30",
+            name: "早會"
+        },
         periods: [
             { start: "08:30", end: "09:10" },
             { start: "09:10", end: "09:50" },
@@ -114,6 +134,11 @@ window.TIMETABLE_DATA = {
     
     // 特殊時間表E (資訊日準備)
     specialE: {
+        preSchoolAssembly: {
+            start: "08:15",
+            end: "08:30",
+            name: "早會"
+        },
         periods: [
             { start: "08:30", end: "09:00" },
             { start: "09:00", end: "09:30" },
