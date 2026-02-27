@@ -35,7 +35,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            | xcpretty
+            | tee build/xcodebuild.log
+
+      - name: Print archive errors on failure
+        if: failure()
+        run: |
+          echo "xcodebuild failed. Showing last 200 lines:"
+          tail -n 200 build/xcodebuild.log || true
+          echo "\nFiltered error lines:"
+          grep -nE "error:|\*\* ARCHIVE FAILED \*\*|CodeSign|provision" build/xcodebuild.log || true
 
       - name: Pack unsigned IPA
         run: |
