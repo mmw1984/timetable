@@ -143,7 +143,7 @@ struct ContentView: View {
             }
         }
         .padding(20)
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
     }
 
     @ViewBuilder
@@ -378,7 +378,10 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
             .padding(16)
             .background(.orange, in: .rect(cornerRadius: 20))
-            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+            }
     }
 
     // MARK: - Future Days Popover
@@ -440,7 +443,7 @@ struct ContentView: View {
                 .padding(.bottom, 20)
         }
         .clipped()
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
     }
 
     private var scheduleHeader: some View {

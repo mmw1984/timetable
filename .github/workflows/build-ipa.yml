@@ -26,6 +26,7 @@ jobs:
       - name: Build app (no code signing)
         run: |
           set -eo pipefail
+          mkdir -p build
           xcodebuild clean archive \
             -project Timetable.xcodeproj \
             -scheme Timetable \

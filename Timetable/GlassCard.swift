@@ -23,6 +23,10 @@ struct GlassCard<Content: View>: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 20))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+        }
     }
 }
