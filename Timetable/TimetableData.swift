@@ -1,0 +1,314 @@
+import Foundation
+
+// MARK: - Period / Break Model
+
+struct TimePeriod: Identifiable {
+    let id = UUID()
+    let start: String   // "HH:mm"
+    let end: String
+}
+
+struct BreakPeriod: Identifiable {
+    let id = UUID()
+    let start: String
+    let end: String
+    let name: String
+}
+
+struct TimetableSchedule {
+    let preSchoolAssembly: TimePeriod?
+    let periods: [TimePeriod]
+    let breaks: [BreakPeriod]
+}
+
+// MARK: - Schedule Item (unified for display)
+
+enum ScheduleItemType: Equatable {
+    case assembly
+    case period(number: Int)
+    case breakTime
+}
+
+struct ScheduleItem: Identifiable {
+    let id = UUID()
+    let type: ScheduleItemType
+    let displayName: String
+    let subject: String
+    let start: String
+    let end: String
+}
+
+// MARK: - Timetable Type
+
+enum TimetableType: String {
+    case normal
+    case specialA
+    case specialB
+    case specialC
+    case specialD
+    case specialE
+    case none
+
+    var displayText: String {
+        switch self {
+        case .normal:   return "正常時間表"
+        case .specialA: return "特殊時間表A"
+        case .specialB: return "特殊時間表B"
+        case .specialC: return "特殊時間表C"
+        case .specialD: return "特殊時間表D"
+        case .specialE: return "特殊時間表E"
+        case .none:     return "非上課日"
+        }
+    }
+
+    var noticeText: String {
+        switch self {
+        case .normal:   return "正常時間表"
+        case .specialA: return "特殊時間表A - 學期初安排"
+        case .specialB: return "特殊時間表B"
+        case .specialC: return "特殊時間表C"
+        case .specialD: return "特殊時間表D"
+        case .specialE: return "特殊時間表E"
+        case .none:     return "今日無課程"
+        }
+    }
+}
+
+// MARK: - Timetable Data
+
+struct TimetableData {
+
+    // MARK: Normal Timetable
+
+    static let normal = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:40"),
+        periods: [
+            TimePeriod(start: "08:40", end: "09:20"),
+            TimePeriod(start: "09:20", end: "10:00"),
+            TimePeriod(start: "10:20", end: "11:00"),
+            TimePeriod(start: "11:00", end: "11:40"),
+            TimePeriod(start: "12:50", end: "13:30"),
+            TimePeriod(start: "13:30", end: "14:10"),
+            TimePeriod(start: "14:25", end: "15:05"),
+            TimePeriod(start: "15:05", end: "15:45"),
+        ],
+        breaks: [
+            BreakPeriod(start: "10:00", end: "10:20", name: "小息"),
+            BreakPeriod(start: "11:40", end: "12:45", name: "午餐"),
+            BreakPeriod(start: "12:45", end: "12:50", name: "點名"),
+            BreakPeriod(start: "14:10", end: "14:25", name: "小息"),
+        ]
+    )
+
+    // MARK: Special Timetable A (3-10/9)
+
+    static let specialA = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:30"),
+        periods: [
+            TimePeriod(start: "08:30", end: "09:00"),
+            TimePeriod(start: "09:00", end: "09:30"),
+            TimePeriod(start: "09:50", end: "10:20"),
+            TimePeriod(start: "10:20", end: "10:50"),
+            TimePeriod(start: "11:05", end: "11:35"),
+            TimePeriod(start: "11:35", end: "12:05"),
+            TimePeriod(start: "13:15", end: "13:45"),
+            TimePeriod(start: "13:45", end: "14:15"),
+        ],
+        breaks: [
+            BreakPeriod(start: "09:30", end: "09:50", name: "小息"),
+            BreakPeriod(start: "10:50", end: "11:05", name: "小息"),
+            BreakPeriod(start: "12:05", end: "13:10", name: "午餐"),
+            BreakPeriod(start: "13:10", end: "13:15", name: "點名"),
+        ]
+    )
+
+    // MARK: Special Timetable B (Fridays + special events)
+
+    static let specialB = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:30"),
+        periods: [
+            TimePeriod(start: "08:30", end: "09:05"),
+            TimePeriod(start: "09:05", end: "09:40"),
+            TimePeriod(start: "10:00", end: "10:35"),
+            TimePeriod(start: "10:35", end: "11:10"),
+            TimePeriod(start: "11:25", end: "12:00"),
+            TimePeriod(start: "12:00", end: "12:35"),
+            TimePeriod(start: "13:45", end: "14:20"),
+            TimePeriod(start: "14:20", end: "14:55"),
+        ],
+        breaks: [
+            BreakPeriod(start: "09:40", end: "10:00", name: "小息"),
+            BreakPeriod(start: "11:10", end: "11:25", name: "小息"),
+            BreakPeriod(start: "12:35", end: "13:40", name: "午餐"),
+            BreakPeriod(start: "13:40", end: "13:45", name: "點名"),
+            BreakPeriod(start: "14:55", end: "15:45", name: "集會"),
+        ]
+    )
+
+    // MARK: Special Timetable C
+
+    static let specialC = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:30"),
+        periods: [
+            TimePeriod(start: "08:30", end: "09:00"),
+            TimePeriod(start: "09:00", end: "09:30"),
+            TimePeriod(start: "09:50", end: "10:20"),
+            TimePeriod(start: "10:20", end: "10:50"),
+            TimePeriod(start: "11:05", end: "11:35"),
+            TimePeriod(start: "11:35", end: "12:05"),
+            TimePeriod(start: "13:15", end: "13:45"),
+            TimePeriod(start: "13:45", end: "14:15"),
+        ],
+        breaks: [
+            BreakPeriod(start: "09:30", end: "09:50", name: "小息"),
+            BreakPeriod(start: "10:50", end: "11:05", name: "小息"),
+            BreakPeriod(start: "12:05", end: "13:10", name: "午餐"),
+            BreakPeriod(start: "13:10", end: "13:15", name: "點名"),
+            BreakPeriod(start: "14:15", end: "15:45", name: "長集會"),
+        ]
+    )
+
+    // MARK: Special Timetable D
+
+    static let specialD = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:30"),
+        periods: [
+            TimePeriod(start: "08:30", end: "09:10"),
+            TimePeriod(start: "09:10", end: "09:50"),
+            TimePeriod(start: "10:10", end: "10:50"),
+            TimePeriod(start: "10:50", end: "11:30"),
+            TimePeriod(start: "13:10", end: "13:45"),
+            TimePeriod(start: "13:45", end: "14:20"),
+            TimePeriod(start: "14:35", end: "15:10"),
+            TimePeriod(start: "15:10", end: "15:45"),
+        ],
+        breaks: [
+            BreakPeriod(start: "09:50", end: "10:10", name: "小息"),
+            BreakPeriod(start: "11:30", end: "13:05", name: "午餐/社際聚會"),
+            BreakPeriod(start: "13:05", end: "13:10", name: "點名"),
+            BreakPeriod(start: "14:20", end: "14:35", name: "小息"),
+        ]
+    )
+
+    // MARK: Special Timetable E
+
+    static let specialE = TimetableSchedule(
+        preSchoolAssembly: TimePeriod(start: "08:15", end: "08:30"),
+        periods: [
+            TimePeriod(start: "08:30", end: "09:00"),
+            TimePeriod(start: "09:00", end: "09:30"),
+            TimePeriod(start: "09:45", end: "10:15"),
+            TimePeriod(start: "10:15", end: "10:45"),
+            TimePeriod(start: "10:55", end: "11:25"),
+            TimePeriod(start: "11:25", end: "11:55"),
+            TimePeriod(start: "12:05", end: "12:35"),
+            TimePeriod(start: "12:35", end: "13:05"),
+        ],
+        breaks: [
+            BreakPeriod(start: "09:30", end: "09:45", name: "小息"),
+            BreakPeriod(start: "10:45", end: "10:55", name: "小息"),
+            BreakPeriod(start: "11:55", end: "12:05", name: "小息"),
+        ]
+    )
+
+    static func schedule(for type: TimetableType) -> TimetableSchedule? {
+        switch type {
+        case .normal:   return normal
+        case .specialA: return specialA
+        case .specialB: return specialB
+        case .specialC: return specialC
+        case .specialD: return specialD
+        case .specialE: return specialE
+        case .none:     return nil
+        }
+    }
+
+    // MARK: - Subject Schedule (Day 1-6)
+
+    static let subjectSchedule: [Int: [Int: String]] = [
+        1: [
+            1: "MATH YPC 405", 2: "MATH YPC 405",
+            3: "PHY WKW 511",  4: "PHY WKW 511",
+            5: "C&L CYM 405",  6: "ENG KKY 405",
+            7: "CHIN NKT 405", 8: "CHIN NKT 405",
+        ],
+        2: [
+            1: "LAC KKY 405",  2: "CS LPY 405",
+            3: "M2 YPC 405",   4: "M2 YPC 405",
+            5: "CHIN NKT 405", 6: "CHIN NKT 405",
+            7: "ICT WKC 316",  8: "ICT WKC 316",
+        ],
+        3: [
+            1: "PHY WKW 511",    2: "PHY WKW 511",
+            3: "PE CWH,KSM GD01", 4: "PE CWH,KSM GD01",
+            5: "CHIN NKT 405",   6: "MATH YPC 405",
+            7: "ENG KKY 405",    8: "ENG KKY 405",
+        ],
+        4: [
+            1: "HEPL TMC,KTT 405", 2: "HEPL TMC,KTT 405",
+            3: "ICT WKC 316",      4: "ICT WKC 316",
+            5: "ENG KKY 405",      6: "CHIN NKT 405",
+            7: "MATH YPC 405",     8: "MATH YPC 405",
+        ],
+        5: [
+            1: "CHIN NKT 405", 2: "CHIN NKT 405",
+            3: "C&L CYM 405",  4: "ENG KKY 405",
+            5: "M2 YPC 405",   6: "M2 YPC 405",
+            7: "CS LPY 405",   8: "CS LPY 405",
+        ],
+        6: [
+            1: "ICT WKC 316",  2: "ICT WKC 316",
+            3: "ENG KKY 405",  4: "ENG KKY 405",
+            5: "PHY WKW 511",  6: "PHY WKW 511",
+            7: "MATH YPC 405", 8: "MATH YPC 405",
+        ],
+    ]
+
+    // MARK: - Day Rotation
+
+    static let dayRotation: [String: Int] = [
+        "2025-09-03": 1, "2025-09-04": 2, "2025-09-05": 3, "2025-09-08": 4, "2025-09-09": 5, "2025-09-10": 6,
+        "2025-09-11": 1, "2025-09-12": 2, "2025-09-15": 3, "2025-09-16": 4, "2025-09-17": 5, "2025-09-18": 6,
+        "2025-09-19": 1, "2025-09-22": 2, "2025-09-23": 3, "2025-09-24": 4, "2025-09-26": 5, "2025-09-29": 6,
+        "2025-09-30": 1, "2025-10-02": 2, "2025-10-03": 3, "2025-10-06": 4, "2025-10-08": 5, "2025-10-09": 6,
+        "2025-10-13": 1, "2025-10-14": 2, "2025-10-15": 3, "2025-10-16": 4, "2025-10-17": 5, "2025-10-20": 6,
+        "2025-10-21": 1, "2025-10-22": 2, "2025-10-23": 3, "2025-10-24": 4, "2025-10-27": 5, "2025-10-28": 6,
+        "2025-10-30": 1, "2025-10-31": 2, "2025-11-03": 3, "2025-11-04": 4, "2025-11-05": 5, "2025-11-06": 6,
+        "2025-11-07": 1, "2025-11-10": 2, "2025-11-11": 3, "2025-11-12": 4, "2025-11-13": 5, "2025-11-14": 6,
+        "2025-11-17": 1, "2025-11-18": 2, "2025-11-19": 3, "2025-11-20": 4, "2025-11-24": 5, "2025-11-25": 6,
+        "2025-11-26": 1, "2025-11-27": 2, "2025-11-28": 3, "2025-12-02": 4, "2025-12-03": 5, "2025-12-04": 6,
+        "2025-12-05": 1, "2025-12-09": 2, "2025-12-10": 3, "2025-12-11": 4, "2025-12-12": 5, "2025-12-15": 6,
+        "2025-12-16": 1, "2025-12-17": 2, "2025-12-18": 3, "2026-01-02": 4, "2026-01-05": 5, "2026-01-06": 6,
+        "2026-01-22": 1, "2026-01-23": 2, "2026-01-26": 3, "2026-01-30": 4, "2026-02-02": 5, "2026-02-03": 6,
+        "2026-02-04": 1, "2026-02-05": 2, "2026-02-06": 3, "2026-02-09": 4, "2026-02-10": 5, "2026-02-11": 6,
+        "2026-02-12": 1, "2026-02-25": 2, "2026-02-26": 3, "2026-02-27": 4, "2026-03-02": 5, "2026-03-03": 6,
+        "2026-03-04": 1, "2026-03-05": 2, "2026-03-06": 3, "2026-03-10": 4, "2026-03-11": 5, "2026-03-12": 6,
+        "2026-03-13": 1, "2026-03-16": 2, "2026-03-17": 3, "2026-03-18": 4, "2026-03-19": 5, "2026-03-20": 6,
+        "2026-03-23": 1, "2026-03-24": 2, "2026-03-25": 3, "2026-03-26": 4, "2026-04-09": 5, "2026-04-17": 6,
+        "2026-04-20": 1, "2026-04-21": 2, "2026-04-22": 3, "2026-04-23": 4, "2026-04-27": 5, "2026-04-28": 6,
+        "2026-04-29": 1, "2026-04-30": 2, "2026-05-04": 3, "2026-05-05": 4, "2026-05-06": 5, "2026-05-07": 6,
+        "2026-05-08": 1, "2026-05-11": 2, "2026-05-12": 3, "2026-05-13": 4, "2026-05-14": 5, "2026-05-15": 6,
+        "2026-05-19": 1, "2026-05-20": 2, "2026-05-21": 3, "2026-05-22": 4, "2026-05-26": 5, "2026-05-27": 6,
+        "2026-05-28": 1, "2026-05-29": 2, "2026-06-01": 3, "2026-06-02": 4, "2026-06-03": 5, "2026-06-04": 6,
+    ]
+
+    // MARK: - Special Dates
+
+    static let specialDates: [String: String] = [
+        "2025-09-03": "A", "2025-09-04": "A", "2025-09-05": "A",
+        "2025-09-08": "A", "2025-09-09": "A", "2025-09-10": "A",
+        "2025-09-12": "B",
+        "2025-11-14": "C",
+        "2025-11-28": "E",
+        "2025-12-12": "C",
+        "2026-02-03": "C",
+        "2026-02-12": "B",
+        "2026-03-26": "B",
+        "2026-04-30": "C",
+        "2026-05-08": "D",
+        "2026-05-15": "B",
+        "2026-05-19": "B", "2026-05-20": "B", "2026-05-21": "B", "2026-05-22": "B",
+        "2026-05-26": "B", "2026-05-27": "B", "2026-05-28": "B", "2026-05-29": "B",
+        "2026-06-01": "B", "2026-06-02": "B", "2026-06-03": "B", "2026-06-04": "B",
+    ]
+}
