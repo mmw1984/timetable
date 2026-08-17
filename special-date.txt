@@ -1,5 +1,3 @@
-Here is the text from the image you provided.
-
 ### Special Timetable A
 **Special Timetable Arrangement for 3-10/9**
 
@@ -38,7 +36,7 @@ Here is the text from the image you provided.
 | Assembly | 2:55 | 3:45 | 50 |
 
 ### Special Timetable C
-**Evangelical Gathering, Rope-skipping Competition, Farewell to S6 Graduates, 2026-2027 SA Consultation Session**
+**Evangelical Gathering, Rope-skipping Competition, Farewell to S6 Graduates, 2027-2028 SA Consultation Session**
 
 | Period / Time | Time start | Time end | Duration (min) |
 | --- | --- | --- | --- |
@@ -95,21 +93,18 @@ Here is the text from the image you provided.
 
 | Dates | Events | Special Timetable |
 | --- | --- | --- |
-| 03 - 10/09/2025 | / | A |
-| 12/09/2025 | Inauguration Ceremony (2:55 p.m.) | B |
-| 26/09/2025 | Replacement for National Security Education Day | Normal |
-| 14/11/2025 | Evangelical Gathering (2:15 p.m.) | C |
-| 28/11/2025 | Information Day Preparation | E |
-| 12/12/2025 | Rope-skipping Competition (p.m.) | C |
-| 03/02/2026 | Farewell to S6 Graduates (2:15 p.m.) | C |
-| 06/02/2026 | Replacement for Farewell to S6 Graduates | Normal |
-| 12/02/2026 | Chinese Culture Week (2:55 p.m.) | B |
-| 26/03/2026 | Easter Service (2:55 p.m.) | B |
-| 09/04/2026 | / | Normal |
-| 17/04/2026 | Going over Second Term Uniform Test | Normal |
-| 30/04/2026 | 2026-2027 SA Consultation Session (2:15 p.m.) | C |
-| 08/05/2026 | House Meeting (Lunch Time) | D |
-| 15/05/2026 | Speech Day Preparation | B |
-| 19/05 - 04/06/2026 | Study Fortnight | B |
+| 03 - 10/09/2026 | S1 Lunching at School | A |
+| 11/09/2026 | Inauguration Ceremony (2:55 p.m.) | B |
+| 26/09/2026 | The day following the Chinese Mid-Autumn Festival | Normal |
+| 13/11/2026 | Evangelical Gathering (2:15 p.m.) | C |
+| 27/11/2026 | Information Day Preparation | E |
+| 11/12/2026 | Rope-skipping Competition (p.m.) | C |
+| 04/02/2027 | Farewell to S6 Graduates (2:15 p.m.) | C |
+| 15/02/2027 | Chinese Culture Week begins | B |
+| 19/03/2027 | Easter Service (2:55 p.m.) | B |
+| 30/04/2027 | 2027-2028 SA Consultation Session (2:15 p.m.) | C |
+| 07/05/2027 | House Meeting (Lunch Time) | D |
+| 14/05/2027 | Speech Day Preparation (p.m.) | B |
+| 18/05 - 03/06/2027 | Study Fortnight | B |
 
 Notice: all fridays should be using special timetable b
