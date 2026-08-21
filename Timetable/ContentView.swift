@@ -16,17 +16,17 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                headerSection
-                mainContent
-            }
-            .padding(24)
+        VStack(spacing: 24) {
+            headerSection
+            mainContent
         }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
         .tint(accentColor)
         .animation(.easeInOut(duration: 0.3), value: engine.viewMode)
         .animation(.easeInOut(duration: 0.3), value: engine.timetableType)
+        .animation(.spring(duration: 0.35), value: engine.selectedDate)
         .sheet(isPresented: $actions.showSettings) {
             SettingsView(theme: theme, dataSource: dataSource, liveActivity: liveActivity)
                 .tint(accentColor)
@@ -162,9 +162,11 @@ struct ContentView: View {
     @ViewBuilder
     private var mainContent: some View {
         if horizontalSizeClass == .compact {
-            VStack(spacing: 24) {
-                leftPanel
-                scheduleSection
+            ScrollView {
+                VStack(spacing: 24) {
+                    leftPanel
+                    scheduleSection(scrollable: false)
+                }
             }
         } else {
             HStack(alignment: .top, spacing: 24) {
@@ -173,9 +175,10 @@ struct ContentView: View {
                         max(280, (length - 72) * 0.38)
                     }
 
-                scheduleSection
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                scheduleSection(scrollable: true)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .frame(maxHeight: .infinity, alignment: .top)
         }
     }
 
@@ -392,25 +395,45 @@ struct ContentView: View {
 
     // MARK: - Schedule Section
 
-    private var scheduleSection: some View {
+    private func scheduleSection(scrollable: Bool) -> some View {
         VStack(spacing: 0) {
             scheduleHeader
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
                 .padding(.bottom, 16)
 
-            scheduleContent
-                .transition(.asymmetric(
-                    insertion: .move(edge: engine.transitionDirection == .backward ? .leading : .trailing)
-                        .combined(with: .opacity),
-                    removal: .move(edge: engine.transitionDirection == .backward ? .trailing : .leading)
-                        .combined(with: .opacity)
-                ))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+            if scrollable {
+                ScrollView {
+                    animatedScheduleContent
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                }
+            } else {
+                animatedScheduleContent
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+            }
         }
+        .frame(maxHeight: scrollable ? .infinity : nil)
         .clipped()
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
+    }
+
+    private var animatedScheduleContent: some View {
+        Group {
+            if engine.viewMode == .today {
+                scheduleContent
+            } else {
+                scheduleContent
+                    .id(ScheduleResolver.isoString(from: engine.selectedDate))
+            }
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: engine.transitionDirection == .backward ? .leading : .trailing)
+                .combined(with: .opacity),
+            removal: .move(edge: engine.transitionDirection == .backward ? .trailing : .leading)
+                .combined(with: .opacity)
+        ))
     }
 
     private var scheduleHeader: some View {

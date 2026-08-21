@@ -77,6 +77,10 @@ final class TimetableEngine {
 
     init() {
         self.resolver = DataSourceManager.shared.makeResolver()
+        if ProcessInfo.processInfo.environment["TIMETABLE_FORCE_DATE_SELECT"] == "1" {
+            viewMode = .dateSelect
+            selectedDate = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
+        }
         refresh()
         startBoundaryLoop()
     }
