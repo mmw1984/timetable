@@ -1,1 +1,16 @@
-@timetable.txt
+CCC Heep Woh College 2026-2027 Class 5E Timetable
+
+| Period | Day 1 | Day 2 | Day 3 | Day 4 | Day 5 | Day 6 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **8:15 - 8:40** | **Pre-School Assembly** |
+| **8:40 - 9:20** | ENG KKY 401 | ICT WKC 316 | CHIN NKT 401 | MACO YPC 401 | PHY WKW 511 | MACO YPC 401 |
+| **9:20 - 10:00** | ENG KKY 401 | ICT WKC 316 | CHIN NKT 401 | MACO YPC 401 | PHY WKW 511 | MACO YPC 401 |
+| **10:00 - 10:20** | **Recess** |
+| **10:20 - 11:00** | MACO YPC 401 | CHIN NKT 401 | ICT WKC 316 | CEP LWF 401 | ENG KKY 401 | ICT WKC 316 |
+| **11:00 - 11:40** | MACO YPC 401 | CHIN NKT 401 | ENG KKY 401 | CHIN NKT 401 | ENG KKY 401 | ICT WKC 316 |
+| **11:40 - 12:50** | **Lunch** |
+| **12:50 - 13:30** | PE LD,WLS G001 | MACO YPC 401 | PHY WKW 511 | PHY WKW 511 | CS LPY 401 | C&L SDF 401 |
+| **13:30 - 14:10** | PE LD,WLS G001 | MACO YPC 401 | PHY WKW 511 | ENG KKY 401 | CS LPY 401 | ENG KKY 401 |
+| **14:10 - 14:25** | **Recess** |
+| **14:25 - 15:05** | PHY WKW 511 | CS LPY 401 | MACO YPC 401 | ICT WKC 316 | MACO YPC 401 | CHIN NKT 401 |
+| **15:05 - 15:45** | PHY WKW 511 | ENG KKY 401 | MACO YPC 401 | ICT WKC 316 | CHIN NKT 401 | CHIN NKT 401 |
