@@ -1,7 +1,4 @@
 import Foundation
-import Combine
-
-// MARK: - Current Period Info
 
 struct PeriodInfo: Equatable {
     enum PeriodType: Equatable {
@@ -14,32 +11,29 @@ struct PeriodInfo: Equatable {
     let subject: String
 }
 
-// MARK: - Timetable Engine
-
+@Observable
 @MainActor
-final class TimetableEngine: ObservableObject {
+final class TimetableEngine {
 
-    // MARK: Published state
+    static let shared = TimetableEngine()
 
-    @Published var currentDate: Date = .now
-    @Published var currentPeriod: PeriodInfo = PeriodInfo(type: .free, name: "載入中...", start: "", end: "", subject: "正在載入...")
-    @Published var nextPeriod: PeriodInfo?
-    @Published var countdownText: String = "--:--:--"
-    @Published var countdownLabel: String = ""
-    @Published var timetableType: TimetableType = .none
-    @Published var dayCycle: Int?
-    @Published var scheduleItems: [ScheduleItem] = []
-    @Published var currentItemID: UUID?
+    var currentPeriod: PeriodInfo = PeriodInfo(type: .free, name: "載入中...", start: "", end: "", subject: "正在載入...")
+    var nextPeriod: PeriodInfo?
+    var timetableType: TimetableType = .none
+    var dayCycle: Int?
+    var scheduleItems: [ScheduleItem] = []
+    var currentItemID: String?
 
-    // Date selection mode
-    @Published var viewMode: ViewMode = .today
-    @Published var selectedDate: Date = .now
+    var countdownEnd: Date?
+    var countdownDelayed: Bool = false
+    var countdownLabel: String = ""
 
-    // Future day rotation
-    @Published var futureDays: [(date: Date, day: Int)] = []
+    var viewMode: ViewMode = .today
+    var selectedDate: Date = .now
 
-    // Transition direction for animations
-    @Published var transitionDirection: TransitionDirection = .none
+    var futureDays: [(date: Date, day: Int)] = []
+
+    var transitionDirection: TransitionDirection = .none
 
     enum ViewMode: Equatable {
         case today, dateSelect
@@ -49,13 +43,9 @@ final class TimetableEngine: ObservableObject {
         case none, forward, backward
     }
 
-    private var timer: Timer?
+    private var resolver: ScheduleResolver
+    private var boundaryTask: Task<Void, Never>?
     private let calendar = Calendar.current
-
-    // Live data source reference
-    private var ds: DataSourceManager { DataSourceManager.shared }
-
-    // MARK: - Formatters (shared)
 
     static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -78,59 +68,51 @@ final class TimetableEngine: ObservableObject {
         return f
     }()
 
-    private static let isoFormatter: DateFormatter = {
+    static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "zh-HK")
+        f.dateFormat = "M月d日(EEE)"
         return f
     }()
 
-    // MARK: - Lifecycle
-
     init() {
+        self.resolver = DataSourceManager.shared.makeResolver()
         refresh()
-        updateFutureDays()
-        startTimer()
+        startBoundaryLoop()
     }
 
-    deinit {
-        timer?.invalidate()
-    }
-
-    // MARK: - Timer
-
-    private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor [weak self] in
-                self?.tick()
+    func startBoundaryLoop() {
+        boundaryTask?.cancel()
+        boundaryTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(15))
+                guard let self, !Task.isCancelled else { return }
+                self.tickBoundary()
             }
         }
     }
 
-    private func tick() {
-        currentDate = .now
-        if viewMode == .today {
-            updateCurrentPeriod()
-            updateCountdown()
+    private func tickBoundary() {
+        guard viewMode == .today else { return }
+        let before = currentPeriod
+        updateCurrentPeriod()
+        updateCountdown()
+        if before != currentPeriod {
+            LiveActivityManager.shared.syncWithEngine(self)
         }
     }
 
     // MARK: - Public API
 
     func refresh() {
-        currentDate = .now
+        resolver = DataSourceManager.shared.makeResolver()
         if viewMode == .today {
-            let todayStr = Self.isoString(from: .now)
-            timetableType = timetableTypeForDate(todayStr)
-            dayCycle = ds.dayRotation[todayStr]
             updateCurrentPeriod()
-            updateScheduleItems(dateStr: todayStr, highlightCurrent: true)
             updateCountdown()
         } else {
-            let dateStr = Self.isoString(from: selectedDate)
-            timetableType = timetableTypeForDate(dateStr)
-            dayCycle = ds.dayRotation[dateStr]
+            let dateStr = ScheduleResolver.isoString(from: selectedDate)
+            timetableType = resolver.timetableType(for: dateStr)
+            dayCycle = resolver.dayRotation[dateStr]
             updateScheduleItems(dateStr: dateStr, highlightCurrent: false)
         }
         updateFutureDays()
@@ -146,9 +128,9 @@ final class TimetableEngine: ObservableObject {
     func viewDate(_ date: Date) {
         viewMode = .dateSelect
         selectedDate = date
-        let dateStr = Self.isoString(from: date)
-        timetableType = timetableTypeForDate(dateStr)
-        dayCycle = ds.dayRotation[dateStr]
+        let dateStr = ScheduleResolver.isoString(from: date)
+        timetableType = resolver.timetableType(for: dateStr)
+        dayCycle = resolver.dayRotation[dateStr]
         updateScheduleItems(dateStr: dateStr, highlightCurrent: false)
     }
 
@@ -170,67 +152,19 @@ final class TimetableEngine: ObservableObject {
         viewDate(d)
     }
 
-    // MARK: - Timetable type detection (uses live data)
-
-    func timetableTypeForDate(_ dateStr: String) -> TimetableType {
-        if let special = ds.specialDates[dateStr] {
-            switch special {
-            case "A": return .specialA
-            case "B": return .specialB
-            case "C": return .specialC
-            case "D": return .specialD
-            case "E": return .specialE
-            default:  return .normal
-            }
-        }
-
-        if isNonSchoolDay(dateStr) { return .none }
-
-        // Friday → specialB
-        if let date = Self.isoDate(from: dateStr) {
-            let weekday = Calendar.current.component(.weekday, from: date)
-            if weekday == 6 { return .specialB }
-        }
-
-        return .normal
-    }
-
-    // MARK: - Future Day Rotation
-
-    func updateFutureDays() {
-        var result: [(date: Date, day: Int)] = []
-        let today = Date.now
-        var d = today
-
-        // Find the next occurrence of each Day 1-6
-        var foundDays: Set<Int> = []
-        let maxSearch = 60 // search up to 60 days ahead
-
-        for _ in 0..<maxSearch {
-            d = calendar.date(byAdding: .day, value: 1, to: d) ?? d
-            let dateStr = Self.isoString(from: d)
-            if let day = ds.dayRotation[dateStr], !foundDays.contains(day) {
-                result.append((date: d, day: day))
-                foundDays.insert(day)
-                if foundDays.count == 6 { break }
-            }
-        }
-
-        result.sort { $0.day < $1.day }
-        futureDays = result
-    }
-
     // MARK: - Current period logic
 
     private func updateCurrentPeriod() {
-        let todayStr = Self.isoString(from: .now)
-        let type = timetableTypeForDate(todayStr)
-        self.timetableType = type
-        self.dayCycle = ds.dayRotation[todayStr]
+        let todayStr = ScheduleResolver.isoString(from: .now)
+        let type = resolver.timetableType(for: todayStr)
+        timetableType = type
+        dayCycle = resolver.dayRotation[todayStr]
 
-        guard type != .none, let schedule = ds.schedule(for: type) else {
+        guard type != .none, let schedule = resolver.schedule(for: type) else {
             currentPeriod = PeriodInfo(type: .none, name: "今日沒有課程", start: "", end: "", subject: "非上課日")
             nextPeriod = nil
+            scheduleItems = []
+            currentItemID = nil
             return
         }
 
@@ -247,7 +181,7 @@ final class TimetableEngine: ObservableObject {
 
         for (i, p) in schedule.periods.enumerated() {
             if isInRange(time, p.start, p.end) {
-                let subject = ds.subjectSchedule[dayCycle ?? 0]?[i + 1] ?? "課程"
+                let subject = resolver.subject(day: dayCycle, periodNumber: i + 1)
                 return PeriodInfo(type: .period, name: "第\(i + 1)節", start: p.start, end: p.end, subject: subject)
             }
         }
@@ -268,7 +202,7 @@ final class TimetableEngine: ObservableObject {
             slots.append((asm.start, asm.end, .assembly, "早會", "Pre-School Assembly"))
         }
         for (i, p) in schedule.periods.enumerated() {
-            let subject = ds.subjectSchedule[dayCycle ?? 0]?[i + 1] ?? "課程"
+            let subject = resolver.subject(day: dayCycle, periodNumber: i + 1)
             slots.append((p.start, p.end, .period, "第\(i + 1)節", subject))
         }
         for b in schedule.breaks {
@@ -285,10 +219,11 @@ final class TimetableEngine: ObservableObject {
 
     // MARK: - Countdown
 
-    func updateCountdown() {
+    private func updateCountdown() {
         guard currentPeriod.type != .free && currentPeriod.type != .none,
               !currentPeriod.end.isEmpty else {
-            countdownText = "--:--:--"
+            countdownEnd = nil
+            countdownDelayed = false
             countdownLabel = ""
             return
         }
@@ -298,28 +233,28 @@ final class TimetableEngine: ObservableObject {
         if currentPeriod.type == .period,
            let startDate = todayDate(from: currentPeriod.start),
            now < startDate.addingTimeInterval(60) {
-            countdownText = "--:--:--"
+            countdownEnd = startDate.addingTimeInterval(60)
+            countdownDelayed = true
             countdownLabel = "上課 1 分鐘後開始倒計時"
             return
         }
 
         guard let endDate = todayDate(from: currentPeriod.end) else {
-            countdownText = "--:--:--"
+            countdownEnd = nil
+            countdownDelayed = false
             countdownLabel = ""
             return
         }
 
-        let diff = endDate.timeIntervalSince(now)
-        if diff <= 0 {
-            countdownText = "00:00:00"
-            countdownLabel = "時間已到"
+        if endDate <= now {
+            countdownEnd = nil
+            countdownDelayed = false
+            countdownLabel = ""
             return
         }
 
-        let h = Int(diff) / 3600
-        let m = (Int(diff) % 3600) / 60
-        let s = Int(diff) % 60
-        countdownText = String(format: "%02d:%02d:%02d", h, m, s)
+        countdownEnd = endDate
+        countdownDelayed = false
 
         switch currentPeriod.type {
         case .period:    countdownLabel = "下課倒計時"
@@ -329,45 +264,10 @@ final class TimetableEngine: ObservableObject {
         }
     }
 
-    // MARK: - Merged countdown for consecutive same-subject periods
-
-    /// Returns the end time considering merged consecutive periods with same subject
-    func mergedCountdownEnd() -> String? {
-        guard currentPeriod.type == .period else { return nil }
-        let currentSubject = currentPeriod.subject
-
-        // Find current and next periods
-        let sortedPeriods = scheduleItems.filter {
-            if case .period = $0.type { return true }
-            return false
-        }.sorted { $0.start < $1.start }
-
-        guard let currentIdx = sortedPeriods.firstIndex(where: { isInRange(currentTimeString(), $0.start, $0.end) }) else {
-            return nil
-        }
-
-        var endTime = sortedPeriods[currentIdx].end
-        var nextIdx = currentIdx + 1
-
-        while nextIdx < sortedPeriods.count {
-            let next = sortedPeriods[nextIdx]
-            // Check if there's only a break (no subject change) between them
-            if next.subject == currentSubject {
-                // Check no break interrupts continuity - next period starts where a break ends
-                endTime = next.end
-                nextIdx += 1
-            } else {
-                break
-            }
-        }
-
-        return endTime == currentPeriod.end ? nil : endTime
-    }
-
     // MARK: - Schedule items
 
     private func updateScheduleItems(dateStr: String, highlightCurrent: Bool) {
-        guard timetableType != .none, let schedule = ds.schedule(for: timetableType) else {
+        guard timetableType != .none, let schedule = resolver.schedule(for: timetableType) else {
             scheduleItems = []
             currentItemID = nil
             return
@@ -379,9 +279,9 @@ final class TimetableEngine: ObservableObject {
             items.append(ScheduleItem(type: .assembly, displayName: "早會", subject: "Pre-School Assembly", start: asm.start, end: asm.end))
         }
 
-        let dc = ds.dayRotation[dateStr]
+        let dc = resolver.dayRotation[dateStr]
         for (i, p) in schedule.periods.enumerated() {
-            let subject = ds.subjectSchedule[dc ?? 0]?[i + 1] ?? "課程"
+            let subject = resolver.subject(day: dc, periodNumber: i + 1)
             items.append(ScheduleItem(type: .period(number: i + 1), displayName: "第\(i + 1)節", subject: subject, start: p.start, end: p.end))
         }
 
@@ -400,7 +300,7 @@ final class TimetableEngine: ObservableObject {
         }
     }
 
-    // MARK: - Build merged schedule items for display
+    // MARK: - Merged schedule items for display
 
     func mergedScheduleItems(merge: Bool) -> [MergedScheduleItem] {
         guard merge else {
@@ -425,20 +325,16 @@ final class TimetableEngine: ObservableObject {
         while i < items.count {
             let item = items[i]
 
-            // Only merge period types with same subject
             if case .period = item.type {
                 var endIdx = i
                 var spanCount = 1
 
                 while endIdx + 1 < items.count {
                     let next = items[endIdx + 1]
-                    // Skip intervening breaks, check if next period has same subject
                     if next.type == .breakTime {
-                        // Check if the period after the break has same subject
                         if endIdx + 2 < items.count,
                            case .period = items[endIdx + 2].type,
                            items[endIdx + 2].subject == item.subject {
-                            // Include the break in the merge, skip break and merge next period
                             endIdx += 2
                             spanCount += 1
                         } else {
@@ -453,12 +349,10 @@ final class TimetableEngine: ObservableObject {
                 }
 
                 if spanCount > 1 {
-                    // Check if any of the merged periods is current
                     let mergedIsCurrent = (i...endIdx).contains(where: { items[$0].id == currentItemID })
                     let firstPeriod = item
                     let lastPeriod = items[endIdx]
 
-                    // Display name: e.g. "第1-2節"
                     var firstNum = 0
                     var lastNum = 0
                     if case .period(let n) = firstPeriod.type { firstNum = n }
@@ -480,7 +374,6 @@ final class TimetableEngine: ObservableObject {
                 }
             }
 
-            // Non-merged item
             result.append(MergedScheduleItem(
                 id: item.id,
                 type: item.type,
@@ -495,6 +388,29 @@ final class TimetableEngine: ObservableObject {
         }
 
         return result
+    }
+
+    // MARK: - Future Day Rotation
+
+    func updateFutureDays() {
+        var result: [(date: Date, day: Int)] = []
+        var d = Date.now
+
+        var foundDays: Set<Int> = []
+        let maxSearch = 60
+
+        for _ in 0..<maxSearch {
+            d = calendar.date(byAdding: .day, value: 1, to: d) ?? d
+            let dateStr = ScheduleResolver.isoString(from: d)
+            if let day = resolver.dayRotation[dateStr], !foundDays.contains(day) {
+                result.append((date: d, day: day))
+                foundDays.insert(day)
+                if foundDays.count == 6 { break }
+            }
+        }
+
+        result.sort { $0.day < $1.day }
+        futureDays = result
     }
 
     // MARK: - Helpers
@@ -513,23 +429,6 @@ final class TimetableEngine: ObservableObject {
         return wd == 1 || wd == 7
     }
 
-    func isNonSchoolDay(_ dateStr: String) -> Bool {
-        guard let date = Self.isoDate(from: dateStr) else { return false }
-        let wd = calendar.component(.weekday, from: date)
-        if wd == 1 || wd == 7 { return true }
-        let hasRotation = ds.dayRotation[dateStr] != nil
-        let hasSpecial = ds.specialDates[dateStr] != nil
-        return !hasRotation && !hasSpecial
-    }
-
-    static func isoString(from date: Date) -> String {
-        isoFormatter.string(from: date)
-    }
-
-    static func isoDate(from str: String) -> Date? {
-        isoFormatter.date(from: str)
-    }
-
     func todayDate(from timeStr: String) -> Date? {
         let parts = timeStr.split(separator: ":").compactMap { Int($0) }
         guard parts.count >= 2 else { return nil }
@@ -544,28 +443,13 @@ final class TimetableEngine: ObservableObject {
         return "無循環日"
     }
 
-    var scheduleTitleText: String {
-        if viewMode == .today {
-            return timetableType == .none ? "今日無課程" : "今日時間表"
-        } else {
-            let formatted = Self.dateFormatter.string(from: selectedDate)
-            return timetableType == .none ? "\(formatted) 無課程" : "\(formatted) 時間表"
-        }
-    }
-
-    /// Short date string for future day display
     static func shortDateString(from date: Date) -> String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "zh-HK")
-        f.dateFormat = "M月d日(EEE)"
-        return f.string(from: date)
+        shortDateFormatter.string(from: date)
     }
 }
 
-// MARK: - Merged Schedule Item
-
 struct MergedScheduleItem: Identifiable {
-    let id: UUID
+    let id: String
     let type: ScheduleItemType
     let displayName: String
     let subject: String

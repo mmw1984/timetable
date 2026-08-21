@@ -1,41 +1,38 @@
 import Foundation
-import Combine
+import WidgetKit
 
-// MARK: - Data Source Manager
-
+@Observable
 @MainActor
-final class DataSourceManager: ObservableObject {
+final class DataSourceManager {
 
     static let shared = DataSourceManager()
 
-    // MARK: - Published state
+    var dayRotation: [String: Int] = TimetableDefaults.dayRotation
+    var specialDates: [String: String] = TimetableDefaults.specialDates
+    var subjectSchedule: [Int: [Int: String]] = TimetableDefaults.subjectSchedule
+    var customTimetables: [String: TimetableSchedule] = [:]
+    var normalSchedule: TimetableSchedule? = nil
 
-    @Published var dayRotation: [String: Int] = TimetableData.dayRotation
-    @Published var specialDates: [String: String] = TimetableData.specialDates
-    @Published var subjectSchedule: [Int: [Int: String]] = TimetableData.subjectSchedule
-    @Published var customTimetables: [String: TimetableSchedule] = [:]
-    @Published var normalSchedule: TimetableSchedule? = nil
-
-    @Published var daysURL: String {
+    var daysURL: String {
         didSet { UserDefaults.standard.set(daysURL, forKey: "daysURL") }
     }
-    @Published var specialDatesURL: String {
+    var specialDatesURL: String {
         didSet { UserDefaults.standard.set(specialDatesURL, forKey: "specialDatesURL") }
     }
-    @Published var timetableURL: String {
+    var timetableURL: String {
         didSet { UserDefaults.standard.set(timetableURL, forKey: "timetableURL") }
     }
 
-    @Published var lastDaysUpdate: Date?
-    @Published var lastSpecialUpdate: Date?
-    @Published var lastTimetableUpdate: Date?
+    var lastDaysUpdate: Date?
+    var lastSpecialUpdate: Date?
+    var lastTimetableUpdate: Date?
 
-    @Published var mergePeriods: Bool {
+    var mergePeriods: Bool {
         didSet { UserDefaults.standard.set(mergePeriods, forKey: "mergePeriods") }
     }
 
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+    var isLoading = false
+    var errorMessage: String?
 
     private init() {
         let base = "https://raw.githubusercontent.com/mmw1984/timetable/refs/heads/main/"
@@ -49,11 +46,8 @@ final class DataSourceManager: ObservableObject {
         self.lastSpecialUpdate = UserDefaults.standard.object(forKey: "lastSpecialUpdate") as? Date
         self.lastTimetableUpdate = UserDefaults.standard.object(forKey: "lastTimetableUpdate") as? Date
 
-        // Load cached data if available
         loadCachedData()
     }
-
-    // MARK: - Public API
 
     func updateAllFromURLs() async {
         isLoading = true
@@ -72,6 +66,8 @@ final class DataSourceManager: ObservableObject {
 
         if !errors.isEmpty {
             errorMessage = errors.joined(separator: "\n")
+        } else {
+            pushSnapshot()
         }
 
         isLoading = false
@@ -84,6 +80,7 @@ final class DataSourceManager: ObservableObject {
             cacheData("days", text)
             lastDaysUpdate = .now
             UserDefaults.standard.set(lastDaysUpdate, forKey: "lastDaysUpdate")
+            pushSnapshot()
         }
     }
 
@@ -98,6 +95,7 @@ final class DataSourceManager: ObservableObject {
         cacheData("special", text)
         lastSpecialUpdate = .now
         UserDefaults.standard.set(lastSpecialUpdate, forKey: "lastSpecialUpdate")
+        pushSnapshot()
     }
 
     func importTimetableFile(_ text: String) {
@@ -111,12 +109,13 @@ final class DataSourceManager: ObservableObject {
         cacheData("timetable", text)
         lastTimetableUpdate = .now
         UserDefaults.standard.set(lastTimetableUpdate, forKey: "lastTimetableUpdate")
+        pushSnapshot()
     }
 
     func resetToDefaults() {
-        dayRotation = TimetableData.dayRotation
-        specialDates = TimetableData.specialDates
-        subjectSchedule = TimetableData.subjectSchedule
+        dayRotation = TimetableDefaults.dayRotation
+        specialDates = TimetableDefaults.specialDates
+        subjectSchedule = TimetableDefaults.subjectSchedule
         customTimetables = [:]
         normalSchedule = nil
         clearCache()
@@ -126,21 +125,34 @@ final class DataSourceManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "lastDaysUpdate")
         UserDefaults.standard.removeObject(forKey: "lastSpecialUpdate")
         UserDefaults.standard.removeObject(forKey: "lastTimetableUpdate")
+        pushSnapshot()
     }
 
-    // MARK: - Schedule lookup (merges custom + default)
-
-    func schedule(for type: TimetableType) -> TimetableSchedule? {
-        if type == .normal, let custom = normalSchedule {
-            return custom
-        }
-        if let custom = customTimetables[type.rawValue] {
-            return custom
-        }
-        return TimetableData.schedule(for: type)
+    func makeResolver() -> ScheduleResolver {
+        ScheduleResolver(
+            dayRotation: dayRotation,
+            specialDates: specialDates,
+            subjectSchedule: subjectSchedule,
+            customTimetables: customTimetables,
+            normalSchedule: normalSchedule
+        )
     }
 
-    // MARK: - Private: Fetch from URL
+    func pushSnapshot() {
+        let theme = ThemeManager.shared
+        let snapshot = TimetableSnapshot(
+            dayRotation: dayRotation,
+            specialDates: specialDates,
+            subjectSchedule: subjectSchedule,
+            customTimetables: customTimetables,
+            normalSchedule: normalSchedule,
+            accentLightHex: theme.lightAccentHex,
+            accentDarkHex: theme.darkAccentHex,
+            generatedAt: .now
+        )
+        SnapshotStore.save(snapshot)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 
     private func fetchAndParseDays() async -> String? {
         guard let url = URL(string: daysURL) else { return "無效 URL" }
@@ -177,8 +189,6 @@ final class DataSourceManager: ObservableObject {
             return error.localizedDescription
         }
     }
-
-    // MARK: - Caching
 
     private var cacheDir: URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first

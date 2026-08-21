@@ -16,25 +16,23 @@ struct ScheduleRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Time column
             VStack(spacing: 2) {
                 Text(item.start)
                 Text(item.end)
             }
-            .font(.system(size: 12, weight: .medium))
+            .font(.caption2.weight(.medium))
             .fontDesign(.rounded)
+            .monospacedDigit()
             .foregroundStyle(labelColor)
-            .frame(width: 48, alignment: .center)
+            .frame(minWidth: 48, alignment: .center)
 
-            // Period name
             Text(item.displayName)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(labelColor)
-                .frame(width: 60, alignment: .leading)
+                .frame(minWidth: 60, alignment: .leading)
 
-            // Subject
             Text(item.subject)
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(labelColor)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -46,17 +44,12 @@ struct ScheduleRowView: View {
         .background(rowBackgroundColor, in: .rect(cornerRadius: 10))
     }
 
-    // MARK: - Layout
-
-    /// Merged items keep same visual height per span
     private var rowVerticalPadding: CGFloat {
         if item.spanCount > 1 {
             return CGFloat(item.spanCount) * 14
         }
         return 14
     }
-
-    // MARK: - Colors
 
     private var rowBackgroundColor: Color {
         if item.isCurrent {

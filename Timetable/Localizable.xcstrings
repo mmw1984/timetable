@@ -1,0 +1,753 @@
+{
+  "sourceLanguage" : "zh-HK",
+  "strings" : {
+    "--:--:--" : {
+
+    },
+    "· %@" : {
+
+    },
+    "%@ - %@" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ - %2$@"
+          }
+        }
+      }
+    },
+    "Day %lld" : {
+
+    },
+    "days.txt URL" : {
+
+    },
+    "special-date.txt URL" : {
+
+    },
+    "timetable.txt URL" : {
+
+    },
+    "上一日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一日"
+          }
+        }
+      }
+    },
+    "上課 1 分鐘後開始倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上課 1 分鐘後開始倒計時"
+          }
+        }
+      }
+    },
+    "下一堂課" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一堂課"
+          }
+        }
+      }
+    },
+    "下一日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一日"
+          }
+        }
+      }
+    },
+    "下一節" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一節"
+          }
+        }
+      }
+    },
+    "下課倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下課倒計時"
+          }
+        }
+      }
+    },
+    "主題色彩" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主題色彩"
+          }
+        }
+      }
+    },
+    "今日時間表" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日時間表"
+          }
+        }
+      }
+    },
+    "今日沒有課程" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日沒有課程"
+          }
+        }
+      }
+    },
+    "今日課程" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日課程"
+          }
+        }
+      }
+    },
+    "今日課程已結束" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日課程已結束"
+          }
+        }
+      }
+    },
+    "倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "倒計時"
+          }
+        }
+      }
+    },
+    "停止測試即時動態" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止測試即時動態"
+          }
+        }
+      }
+    },
+    "全螢幕" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全螢幕"
+          }
+        }
+      }
+    },
+    "全螢幕倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全螢幕倒計時"
+          }
+        }
+      }
+    },
+    "切換即時動態" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換即時動態"
+          }
+        }
+      }
+    },
+    "剩餘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剩餘"
+          }
+        }
+      }
+    },
+    "匯入本地檔案或從網絡 URL 下載最新資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入本地檔案或從網絡 URL 下載最新資料"
+          }
+        }
+      }
+    },
+    "即將到來的循環日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即將到來的循環日"
+          }
+        }
+      }
+    },
+    "即時動態" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時動態"
+          }
+        }
+      }
+    },
+    "合併：連續相同科目的課堂將合併為一個顯示，但保持相同的視覺高度\n即時動態不會發出任何聲音或震動" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "合併：連續相同科目的課堂將合併為一個顯示，但保持相同的視覺高度\n即時動態不會發出任何聲音或震動"
+          }
+        }
+      }
+    },
+    "合併相同科目連堂" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "合併相同科目連堂"
+          }
+        }
+      }
+    },
+    "喺控制中心查看目前節數同倒計時" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喺控制中心查看目前節數同倒計時"
+          }
+        }
+      }
+    },
+    "在鎖定畫面和動態島顯示倒計時（無聲）" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在鎖定畫面和動態島顯示倒計時（無聲）"
+          }
+        }
+      }
+    },
+    "完成" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
+    "實時時間表" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "實時時間表"
+          }
+        }
+      }
+    },
+    "小息結束倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小息結束倒計時"
+          }
+        }
+      }
+    },
+    "已結束" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已結束"
+          }
+        }
+      }
+    },
+    "從網絡下載最新嘅循環日、特殊日期同時間表資料" : {
+
+    },
+    "從網絡更新全部" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從網絡更新全部"
+          }
+        }
+      }
+    },
+    "循環日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "循環日"
+          }
+        }
+      }
+    },
+    "循環日 URL" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "循環日 URL"
+          }
+        }
+      }
+    },
+    "循環日資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "循環日資料"
+          }
+        }
+      }
+    },
+    "打開 app 並顯示今日時間表" : {
+
+    },
+    "打開 app 並顯示指定日期嘅時間表" : {
+
+    },
+    "打開時間表" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開時間表"
+          }
+        }
+      }
+    },
+    "日期" : {
+
+    },
+    "早會" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "早會"
+          }
+        }
+      }
+    },
+    "早會結束倒計時" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "早會結束倒計時"
+          }
+        }
+      }
+    },
+    "時間表" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間表"
+          }
+        }
+      }
+    },
+    "時間表 URL" : {
+
+    },
+    "時間表資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間表資料"
+          }
+        }
+      }
+    },
+    "時間表資料已更新" : {
+
+    },
+    "暫無即將到來的循環日資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無即將到來的循環日資料"
+          }
+        }
+      }
+    },
+    "暫無時間表資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無時間表資料"
+          }
+        }
+      }
+    },
+    "更新時間表資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新時間表資料"
+          }
+        }
+      }
+    },
+    "更新資料" : {
+
+    },
+    "查看" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看"
+          }
+        }
+      }
+    },
+    "查看 ${date} 嘅時間表" : {
+
+    },
+    "查看今日時間表" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看今日時間表"
+          }
+        }
+      }
+    },
+    "查看指定日期時間表" : {
+
+    },
+    "測試即時動態" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "測試即時動態"
+          }
+        }
+      }
+    },
+    "無循環日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無循環日"
+          }
+        }
+      }
+    },
+    "版本" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
+        }
+      }
+    },
+    "特殊日期 URL" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特殊日期 URL"
+          }
+        }
+      }
+    },
+    "特殊日期資料" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "特殊日期資料"
+          }
+        }
+      }
+    },
+    "當前狀態" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前狀態"
+          }
+        }
+      }
+    },
+    "當前節數" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前節數"
+          }
+        }
+      }
+    },
+    "目前沒有課程" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前沒有課程"
+          }
+        }
+      }
+    },
+    "確認重置" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認重置"
+          }
+        }
+      }
+    },
+    "空堂時間" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空堂時間"
+          }
+        }
+      }
+    },
+    "節數倒計時" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "節數倒計時"
+          }
+        }
+      }
+    },
+    "網絡資料 URL" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網絡資料 URL"
+          }
+        }
+      }
+    },
+    "設定" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
+    "資料來源" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料來源"
+          }
+        }
+      }
+    },
+    "返回今日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回今日"
+          }
+        }
+      }
+    },
+    "這將清除所有從網絡或檔案匯入的資料，恢復為內建預設值。" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這將清除所有從網絡或檔案匯入的資料，恢復為內建預設值。"
+          }
+        }
+      }
+    },
+    "運行中" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "運行中"
+          }
+        }
+      }
+    },
+    "選擇主題色彩，所有強調色將隨之改變" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇主題色彩，所有強調色將隨之改變"
+          }
+        }
+      }
+    },
+    "選擇日期" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇日期"
+          }
+        }
+      }
+    },
+    "重置為預設值" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置為預設值"
+          }
+        }
+      }
+    },
+    "鎖定畫面顯示目前節數同倒計時" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鎖定畫面顯示目前節數同倒計時"
+          }
+        }
+      }
+    },
+    "開啟或關閉鎖定畫面倒計時" : {
+
+    },
+    "關於" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
+          }
+        }
+      }
+    },
+    "非上課日" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "非上課日"
+          }
+        }
+      }
+    },
+    "顯示今日剩餘嘅課堂安排" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示今日剩餘嘅課堂安排"
+          }
+        }
+      }
+    },
+    "顯示目前節數、倒計時同下一節" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示目前節數、倒計時同下一節"
+          }
+        }
+      }
+    },
+    "顯示設定" : {
+      "localizations" : {
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示設定"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,7 +1,5 @@
 import SwiftUI
 
-// MARK: - Glassmorphic Card
-
 struct GlassCard<Content: View>: View {
     let title: String?
     let content: Content
@@ -15,8 +13,7 @@ struct GlassCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 16) {
             if let title {
                 Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
             content
@@ -26,7 +23,7 @@ struct GlassCard<Content: View>: View {
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 20))
         .overlay {
             RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         }
     }
 }

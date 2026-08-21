@@ -1,7 +1,4 @@
 import SwiftUI
-import Combine
-
-// MARK: - Color Preset
 
 struct ColorPreset: Identifiable, Codable, Equatable {
     let id: String
@@ -17,14 +14,13 @@ struct ColorPreset: Identifiable, Codable, Equatable {
     }
 }
 
-// MARK: - Theme Manager
-
+@Observable
 @MainActor
-final class ThemeManager: ObservableObject {
+final class ThemeManager {
 
     static let shared = ThemeManager()
 
-    @Published var selectedPresetID: String {
+    var selectedPresetID: String {
         didSet { UserDefaults.standard.set(selectedPresetID, forKey: "selectedPresetID") }
     }
 
@@ -32,11 +28,12 @@ final class ThemeManager: ObservableObject {
         Self.presets.first(where: { $0.id == selectedPresetID }) ?? Self.presets[0]
     }
 
+    var lightAccentHex: String { selectedPreset.lightAccentHex }
+    var darkAccentHex: String { selectedPreset.darkAccentHex }
+
     private init() {
         self.selectedPresetID = UserDefaults.standard.string(forKey: "selectedPresetID") ?? "blue"
     }
-
-    // MARK: - Apple-style presets
 
     static let presets: [ColorPreset] = [
         ColorPreset(id: "blue",        name: "經典藍",   lightAccentHex: "#007AFF", darkAccentHex: "#0A84FF"),
@@ -56,18 +53,4 @@ final class ThemeManager: ObservableObject {
         ColorPreset(id: "brown",       name: "棕色",     lightAccentHex: "#A2845E", darkAccentHex: "#AC8E68"),
         ColorPreset(id: "graphite",    name: "石墨",     lightAccentHex: "#8E8E93", darkAccentHex: "#98989D"),
     ]
-}
-
-// MARK: - Color hex extension
-
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r = Double((int >> 16) & 0xFF) / 255.0
-        let g = Double((int >> 8) & 0xFF) / 255.0
-        let b = Double(int & 0xFF) / 255.0
-        self.init(red: r, green: g, blue: b)
-    }
 }

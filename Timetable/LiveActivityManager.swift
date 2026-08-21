@@ -1,112 +1,94 @@
 import Foundation
 import ActivityKit
 
-// MARK: - Timetable Live Activity Attributes
-
-struct TimetableActivityAttributes: ActivityAttributes {
-    /// Static data that doesn't change during the activity
-    struct ContentState: Codable, Hashable {
-        var periodName: String
-        var subject: String
-        var endTime: String
-        var countdownSeconds: Int
-        var nextPeriodName: String?
-        var nextSubject: String?
-    }
-}
-
-// MARK: - Live Activity Manager
-
+@Observable
 @MainActor
 final class LiveActivityManager {
     static let shared = LiveActivityManager()
 
-    private var currentActivity: Activity<TimetableActivityAttributes>?
-    private var updateTimer: Timer?
+    var isEnabled: Bool {
+        didSet { UserDefaults.standard.set(isEnabled, forKey: "liveActivityEnabled") }
+    }
 
-    private init() {}
+    private var currentActivity: Activity<TimetableActivityAttributes>?
 
     var isRunning: Bool {
         currentActivity != nil
     }
 
-    func startActivity(periodName: String, subject: String, endTime: String, countdownSeconds: Int, nextPeriodName: String?, nextSubject: String?) {
+    private init() {
+        self.isEnabled = UserDefaults.standard.bool(forKey: "liveActivityEnabled")
+    }
+
+    func startActivity(periodName: String, subject: String, endDate: Date, nextPeriodName: String?, nextSubject: String?) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
-        // End existing activity first
         stopActivity()
 
         let attributes = TimetableActivityAttributes()
-        let state = TimetableActivityAttributes.ContentState(
+        let state = makeState(
             periodName: periodName,
             subject: subject,
-            endTime: endTime,
-            countdownSeconds: countdownSeconds,
+            endDate: endDate,
             nextPeriodName: nextPeriodName,
             nextSubject: nextSubject
         )
 
         do {
-            let content = ActivityContent(state: state, staleDate: nil)
+            let content = ActivityContent(state: state, staleDate: endDate)
             let activity = try Activity.request(
                 attributes: attributes,
                 content: content,
                 pushType: nil
             )
             currentActivity = activity
-            startUpdateTimer()
-        } catch {
-            print("Failed to start live activity: \(error)")
-        }
+        } catch {}
     }
 
-    func updateActivity(periodName: String, subject: String, endTime: String, countdownSeconds: Int, nextPeriodName: String?, nextSubject: String?) {
+    func updateActivity(periodName: String, subject: String, endDate: Date, nextPeriodName: String?, nextSubject: String?) {
         guard let activity = currentActivity else { return }
 
-        let state = TimetableActivityAttributes.ContentState(
+        let state = makeState(
             periodName: periodName,
             subject: subject,
-            endTime: endTime,
-            countdownSeconds: countdownSeconds,
+            endDate: endDate,
             nextPeriodName: nextPeriodName,
             nextSubject: nextSubject
         )
 
         Task {
-            let content = ActivityContent(state: state, staleDate: nil)
+            let content = ActivityContent(state: state, staleDate: endDate)
             await activity.update(content)
         }
     }
 
     func stopActivity() {
-        updateTimer?.invalidate()
-        updateTimer = nil
-
         guard let activity = currentActivity else { return }
+        currentActivity = nil
+
         Task {
             let state = TimetableActivityAttributes.ContentState(
                 periodName: "已結束",
                 subject: "",
-                endTime: "",
-                countdownSeconds: 0,
+                endDate: .now,
                 nextPeriodName: nil,
-                nextSubject: nil
+                nextSubject: nil,
+                accentHex: ThemeManager.shared.darkAccentHex
             )
             let content = ActivityContent(state: state, staleDate: nil)
             await activity.end(content, dismissalPolicy: .immediate)
         }
-        currentActivity = nil
     }
 
-    /// Updates the live activity from the engine's current state
     func syncWithEngine(_ engine: TimetableEngine) {
+        guard isEnabled else { return }
+
         let period = engine.currentPeriod
-        guard period.type != .free && period.type != .none else {
+        guard period.type != .free && period.type != .none,
+              let end = engine.countdownEnd else {
             if isRunning { stopActivity() }
             return
         }
-
-        let countdownSeconds = calculateCountdown(endTime: period.end)
 
         let nextPeriodName = engine.nextPeriod?.name
         let nextSubject = engine.nextPeriod?.type == .period ? engine.nextPeriod?.subject : nil
@@ -115,8 +97,7 @@ final class LiveActivityManager {
             updateActivity(
                 periodName: period.name,
                 subject: period.subject,
-                endTime: period.end,
-                countdownSeconds: countdownSeconds,
+                endDate: end,
                 nextPeriodName: nextPeriodName,
                 nextSubject: nextSubject
             )
@@ -124,31 +105,21 @@ final class LiveActivityManager {
             startActivity(
                 periodName: period.name,
                 subject: period.subject,
-                endTime: period.end,
-                countdownSeconds: countdownSeconds,
+                endDate: end,
                 nextPeriodName: nextPeriodName,
                 nextSubject: nextSubject
             )
         }
     }
 
-    private func calculateCountdown(endTime: String) -> Int {
-        let parts = endTime.split(separator: ":").compactMap { Int($0) }
-        guard parts.count >= 2 else { return 0 }
-
-        let calendar = Calendar.current
-        guard let endDate = calendar.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: .now) else {
-            return 0
-        }
-
-        return max(0, Int(endDate.timeIntervalSince(.now)))
-    }
-
-    private func startUpdateTimer() {
-        updateTimer?.invalidate()
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
-            guard self != nil else { return }
-            // Updates are driven by syncWithEngine calls from ContentView
-        }
+    private func makeState(periodName: String, subject: String, endDate: Date, nextPeriodName: String?, nextSubject: String?) -> TimetableActivityAttributes.ContentState {
+        TimetableActivityAttributes.ContentState(
+            periodName: periodName,
+            subject: subject,
+            endDate: endDate,
+            nextPeriodName: nextPeriodName,
+            nextSubject: nextSubject,
+            accentHex: ThemeManager.shared.darkAccentHex
+        )
     }
 }

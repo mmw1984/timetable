@@ -1,24 +1,15 @@
 import SwiftUI
 
-// MARK: - Conditional modifier
-
-extension View {
-    @ViewBuilder
-    func `if`<T: View>(_ condition: Bool, transform: (Self) -> T) -> some View {
-        if condition { transform(self) } else { self }
-    }
-}
-
 struct ContentView: View {
-    @StateObject private var engine = TimetableEngine()
-    @StateObject private var theme = ThemeManager.shared
-    @StateObject private var dataSource = DataSourceManager.shared
+    @State private var engine = TimetableEngine.shared
+    private var theme = ThemeManager.shared
+    private var dataSource = DataSourceManager.shared
+    @State private var actions = AppActions.shared
+    private var liveActivity = LiveActivityManager.shared
+
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showSettings = false
-    @State private var showFullscreenCountdown = false
-    @State private var showFutureDays = false
-    @State private var scheduleID = UUID()
-    @State private var liveActivityEnabled = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
 
     private var accentColor: Color {
         theme.selectedPreset.accent(for: colorScheme)
@@ -36,25 +27,23 @@ struct ContentView: View {
         .tint(accentColor)
         .animation(.easeInOut(duration: 0.3), value: engine.viewMode)
         .animation(.easeInOut(duration: 0.3), value: engine.timetableType)
-        .sheet(isPresented: $showSettings) {
-            SettingsView(theme: theme, dataSource: dataSource, liveActivityEnabled: $liveActivityEnabled)
+        .sheet(isPresented: $actions.showSettings) {
+            SettingsView(theme: theme, dataSource: dataSource, liveActivity: liveActivity)
                 .tint(accentColor)
         }
-        .fullScreenCover(isPresented: $showFullscreenCountdown) {
+        .fullScreenCover(isPresented: $actions.showFullscreen) {
             FullscreenCountdownView(engine: engine, accentColor: accentColor)
         }
-        .onChange(of: dataSource.dayRotation) {
-            engine.refresh()
-        }
-        .onChange(of: dataSource.specialDates) {
-            engine.refresh()
-        }
-        .onChange(of: dataSource.subjectSchedule) {
-            engine.refresh()
-        }
-        .onChange(of: engine.currentPeriod) {
-            if liveActivityEnabled {
-                LiveActivityManager.shared.syncWithEngine(engine)
+        .onChange(of: dataSource.dayRotation) { engine.refresh() }
+        .onChange(of: dataSource.specialDates) { engine.refresh() }
+        .onChange(of: dataSource.subjectSchedule) { engine.refresh() }
+        .onChange(of: theme.selectedPresetID) { dataSource.pushSnapshot() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                engine.refresh()
+                if liveActivity.isEnabled && liveActivity.isRunning {
+                    LiveActivityManager.shared.syncWithEngine(engine)
+                }
             }
         }
     }
@@ -63,10 +52,9 @@ struct ContentView: View {
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            // Title row
-            HStack {
+            HStack(alignment: .top) {
                 Text("實時時間表")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.title.weight(.bold))
                     .foregroundStyle(.primary)
 
                 Spacer()
@@ -74,135 +62,120 @@ struct ContentView: View {
                 datetimeView
             }
 
-            // Tab + nav row
-            HStack(spacing: 8) {
-                viewTabButton(title: "今日時間表", icon: "calendar", mode: .today)
-                viewTabButton(title: "選擇日期", icon: "calendar.badge.clock", mode: .dateSelect)
-
-                // Future days popover button
-                Button {
-                    showFutureDays.toggle()
-                } label: {
-                    Image(systemName: "list.number")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: .capsule)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showFutureDays) {
-                    futureDaysPopover
-                }
-
-                // Settings button — right next to future days
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: .capsule)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                // Nav buttons
-                Button {
-                    withAnimation(.spring(duration: 0.35)) {
-                        engine.goToPrevDay()
-                        scheduleID = UUID()
-                    }
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: .capsule)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    withAnimation(.spring(duration: 0.35)) {
-                        engine.goToNextDay()
-                        scheduleID = UUID()
-                    }
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: .capsule)
-                }
-                .buttonStyle(.plain)
-            }
+            controlRow
         }
         .padding(20)
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 22))
     }
 
+    private var controlRow: some View {
+        HStack(spacing: 8) {
+            viewTabButton(title: "今日時間表", icon: "calendar", mode: .today)
+            viewTabButton(title: "選擇日期", icon: "calendar.badge.clock", mode: .dateSelect)
+
+            Button {
+                actions.showFutureDays.toggle()
+            } label: {
+                Label("循環日", systemImage: "list.number")
+            }
+            .buttonStyle(.glass)
+            .labelStyle(.iconOnly)
+            .popover(isPresented: $actions.showFutureDays) {
+                futureDaysPopover
+            }
+
+            Button {
+                actions.showSettings = true
+            } label: {
+                Label("設定", systemImage: "gearshape")
+            }
+            .buttonStyle(.glass)
+            .labelStyle(.iconOnly)
+
+            Spacer()
+
+            Button {
+                withAnimation(.spring(duration: 0.35)) {
+                    engine.goToPrevDay()
+                }
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.glass)
+            .labelStyle(.iconOnly)
+
+            Button {
+                withAnimation(.spring(duration: 0.35)) {
+                    engine.goToNextDay()
+                }
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.glass)
+            .labelStyle(.iconOnly)
+        }
+    }
+
     @ViewBuilder
     private func viewTabButton(title: String, icon: String, mode: TimetableEngine.ViewMode) -> some View {
         let isActive = engine.viewMode == mode
-        Button {
+        let button = Button {
             withAnimation(.spring(duration: 0.3)) {
                 if mode == .today {
                     engine.switchToToday()
                 } else {
                     engine.viewMode = .dateSelect
                 }
-                scheduleID = UUID()
             }
         } label: {
             Label(title, systemImage: icon)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(isActive ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .font(.subheadline.weight(.medium))
         }
-        .buttonStyle(.plain)
-        .if(!isActive) { view in
-            view.background(.ultraThinMaterial, in: .capsule)
-        }
-        .if(isActive) { view in
-            view.background(accentColor, in: .capsule)
+
+        if isActive {
+            button.buttonStyle(.glassProminent)
+        } else {
+            button.buttonStyle(.glass)
         }
     }
 
     private var datetimeView: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(TimetableEngine.dateFormatter.string(from: engine.currentDate))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(TimetableEngine.dateFormatter.string(from: context.date))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-            Text(TimetableEngine.timeFormatter.string(from: engine.currentDate))
-                .font(.system(size: 18, weight: .semibold))
-                .fontDesign(.rounded)
-                .foregroundStyle(accentColor)
-                .contentTransition(.numericText())
-                .animation(.smooth, value: TimetableEngine.timeFormatter.string(from: engine.currentDate))
+                Text(TimetableEngine.timeFormatter.string(from: context.date))
+                    .font(.title3.weight(.semibold))
+                    .fontDesign(.rounded)
+                    .monospacedDigit()
+                    .foregroundStyle(accentColor)
+                    .contentTransition(.numericText())
+                    .animation(.smooth, value: context.date.timeIntervalSinceReferenceDate)
+            }
         }
     }
 
-    // MARK: - Main Content (two-column: 1fr 1.5fr)
+    // MARK: - Main Content (adaptive columns)
 
+    @ViewBuilder
     private var mainContent: some View {
-        HStack(alignment: .top, spacing: 24) {
-            leftPanel
-                .containerRelativeFrame(.horizontal) { length, _ in
-                    (length - 72) * (1.0 / 2.5)
-                }
+        if horizontalSizeClass == .compact {
+            VStack(spacing: 24) {
+                leftPanel
+                scheduleSection
+            }
+        } else {
+            HStack(alignment: .top, spacing: 24) {
+                leftPanel
+                    .containerRelativeFrame(.horizontal) { length, _ in
+                        max(280, (length - 72) * 0.38)
+                    }
 
-            scheduleSection
-                .containerRelativeFrame(.horizontal) { length, _ in
-                    (length - 72) * (1.5 / 2.5)
-                }
+                scheduleSection
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
         }
     }
 
@@ -228,19 +201,19 @@ struct ContentView: View {
         GlassCard(title: "當前狀態") {
             VStack(spacing: 8) {
                 Text(engine.currentPeriod.name)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(accentColor)
 
                 if !engine.currentPeriod.start.isEmpty {
                     Text("\(engine.currentPeriod.start) - \(engine.currentPeriod.end)")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .fontDesign(.rounded)
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
 
                 Text(engine.currentPeriod.subject)
-                    .font(.body)
-                    .fontWeight(.medium)
+                    .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
@@ -250,35 +223,35 @@ struct ContentView: View {
     private var countdownCard: some View {
         GlassCard(title: "倒計時") {
             VStack(spacing: 8) {
-                Text(engine.countdownText)
-                    .font(.system(size: 32, weight: .bold))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(accentColor)
-                    .contentTransition(.numericText())
-                    .animation(.smooth, value: engine.countdownText)
+                Group {
+                    if let end = engine.countdownEnd, !engine.countdownDelayed {
+                        Text(timerInterval: Date.now...end, countsDown: true)
+                            .monospacedDigit()
+                    } else {
+                        Text("--:--:--")
+                            .monospacedDigit()
+                    }
+                }
+                .font(.largeTitle.weight(.bold))
+                .fontDesign(.rounded)
+                .foregroundStyle(accentColor)
+                .contentTransition(.numericText())
+                .animation(.smooth, value: engine.countdownEnd)
 
                 if !engine.countdownLabel.isEmpty {
                     Text(engine.countdownLabel)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
 
-                // Fullscreen AOD button — always visible
                 Button {
-                    showFullscreenCountdown = true
+                    actions.showFullscreen = true
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.system(size: 12, weight: .medium))
-                        Text("全螢幕")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(accentColor)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: .capsule)
+                    Label("全螢幕", systemImage: "arrow.up.left.and.arrow.down.right")
+                        .font(.footnote.weight(.medium))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.glass)
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity)
@@ -290,13 +263,14 @@ struct ContentView: View {
             if let next = engine.nextPeriod {
                 VStack(spacing: 8) {
                     Text(next.name)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
 
                     if !next.start.isEmpty {
                         Text("\(next.start) - \(next.end)")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                             .fontDesign(.rounded)
+                            .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
 
@@ -326,25 +300,23 @@ struct ContentView: View {
                     Button("查看") {
                         withAnimation(.spring(duration: 0.35)) {
                             engine.viewDate(engine.selectedDate)
-                            scheduleID = UUID()
                         }
                     }
-                    .buttonStyle(GlassPrimaryButton(accent: accentColor))
+                    .buttonStyle(.glassProminent)
+                    .tint(accentColor)
 
                     Button("返回今日") {
                         withAnimation(.spring(duration: 0.35)) {
                             engine.switchToToday()
-                            scheduleID = UUID()
                         }
                     }
-                    .buttonStyle(GlassSecondaryButton())
+                    .buttonStyle(.glass)
                 }
 
                 if engine.viewMode == .dateSelect {
                     VStack(spacing: 8) {
                         Text(TimetableEngine.fullDateFormatter.string(from: engine.selectedDate))
-                            .font(.body)
-                            .fontWeight(.semibold)
+                            .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
 
                         HStack(spacing: 8) {
@@ -361,19 +333,16 @@ struct ContentView: View {
 
     private func dateTag(_ text: String) -> some View {
         Text(text)
-            .font(.caption)
-            .fontWeight(.medium)
+            .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
             .background(.ultraThinMaterial, in: .capsule)
     }
 
-    // Notice card — standalone glass with orange tint
     private var noticeCard: some View {
         Text(engine.timetableType.noticeText)
-            .font(.body)
-            .fontWeight(.medium)
+            .font(.body.weight(.medium))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(16)
@@ -389,8 +358,7 @@ struct ContentView: View {
     private var futureDaysPopover: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("即將到來的循環日")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
+                .font(.headline)
 
             if engine.futureDays.isEmpty {
                 Text("暫無即將到來的循環日資料")
@@ -401,13 +369,13 @@ struct ContentView: View {
                     ForEach(engine.futureDays, id: \.day) { item in
                         HStack(spacing: 12) {
                             Text("Day \(item.day)")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.subheadline.weight(.bold))
                                 .fontDesign(.rounded)
                                 .foregroundStyle(accentColor)
                                 .frame(width: 52, alignment: .leading)
 
                             Text(TimetableEngine.shortDateString(from: item.date))
-                                .font(.system(size: 14))
+                                .font(.subheadline)
                                 .foregroundStyle(.primary)
 
                             Spacer()
@@ -432,7 +400,6 @@ struct ContentView: View {
                 .padding(.bottom, 16)
 
             scheduleContent
-                .id(scheduleID)
                 .transition(.asymmetric(
                     insertion: .move(edge: engine.transitionDirection == .backward ? .leading : .trailing)
                         .combined(with: .opacity),
@@ -450,12 +417,12 @@ struct ContentView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(engine.viewMode == .today ? "今日時間表" : "時間表")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.title3.weight(.bold))
                     .foregroundStyle(.primary)
 
                 if engine.viewMode == .dateSelect {
                     Text(TimetableEngine.fullDateFormatter.string(from: engine.selectedDate))
-                        .font(.system(size: 14))
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -463,8 +430,7 @@ struct ContentView: View {
             Spacer()
 
             Text(engine.dayIndicatorText)
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
@@ -478,7 +444,7 @@ struct ContentView: View {
         if mergedItems.isEmpty {
             emptyScheduleView
         } else {
-            VStack(spacing: 8) {
+            LazyVStack(spacing: 8) {
                 ForEach(mergedItems) { item in
                     ScheduleRowView(
                         item: item,
@@ -491,8 +457,7 @@ struct ContentView: View {
 
     private var emptyScheduleView: some View {
         Text(engine.timetableType == .none ? "今日沒有課程" : "暫無時間表資料")
-            .font(.body)
-            .fontWeight(.medium)
+            .font(.body.weight(.medium))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)
             .padding(24)
@@ -501,36 +466,6 @@ struct ContentView: View {
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [6]))
                     .foregroundStyle(Color(.separator))
             )
-    }
-}
-
-// MARK: - Button Styles
-
-struct GlassPrimaryButton: ButtonStyle {
-    let accent: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .background(accent, in: .capsule)
-            .opacity(configuration.isPressed ? 0.8 : 1.0)
-    }
-}
-
-struct GlassSecondaryButton: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: .capsule)
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
     }
 }
 

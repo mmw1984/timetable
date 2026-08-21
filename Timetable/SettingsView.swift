@@ -2,9 +2,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
-    @ObservedObject var theme: ThemeManager
-    @ObservedObject var dataSource: DataSourceManager
-    @Binding var liveActivityEnabled: Bool
+    @Bindable var theme: ThemeManager
+    @Bindable var dataSource: DataSourceManager
+    @Bindable var liveActivity: LiveActivityManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -45,6 +45,7 @@ struct SettingsView: View {
                 Text("這將清除所有從網絡或檔案匯入的資料，恢復為內建預設值。")
             }
         }
+        .presentationDetents([.large])
     }
 
     // MARK: - Color Section
@@ -104,7 +105,7 @@ struct SettingsView: View {
         Section {
             Toggle("合併相同科目連堂", isOn: $dataSource.mergePeriods)
 
-            Toggle(isOn: $liveActivityEnabled) {
+            Toggle(isOn: $liveActivity.isEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("即時動態")
                     Text("在鎖定畫面和動態島顯示倒計時（無聲）")
@@ -112,25 +113,25 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .onChange(of: liveActivityEnabled) { _, newValue in
-                if !newValue {
-                    LiveActivityManager.shared.stopActivity()
+            .onChange(of: liveActivity.isEnabled) {
+                if !liveActivity.isEnabled {
+                    liveActivity.stopActivity()
                     liveActivityTestActive = false
+                } else if let engine = currentEngineIfRunning {
+                    liveActivity.syncWithEngine(engine)
                 }
             }
 
-            // Live Activity test button
-            if liveActivityEnabled {
+            if liveActivity.isEnabled {
                 Button {
                     if liveActivityTestActive {
-                        LiveActivityManager.shared.stopActivity()
+                        liveActivity.stopActivity()
                         liveActivityTestActive = false
                     } else {
-                        LiveActivityManager.shared.startActivity(
+                        liveActivity.startActivity(
                             periodName: "第3節（測試）",
                             subject: "MATH YPC 405",
-                            endTime: "11:00",
-                            countdownSeconds: 600,
+                            endDate: .now.addingTimeInterval(600),
                             nextPeriodName: "小息",
                             nextSubject: nil
                         )
@@ -156,6 +157,11 @@ struct SettingsView: View {
         } footer: {
             Text("合併：連續相同科目的課堂將合併為一個顯示，但保持相同的視覺高度\n即時動態不會發出任何聲音或震動")
         }
+    }
+
+    @MainActor
+    private var currentEngineIfRunning: TimetableEngine? {
+        TimetableEngine.shared.currentPeriod.type == .period ? TimetableEngine.shared : nil
     }
 
     // MARK: - Data Source Section
