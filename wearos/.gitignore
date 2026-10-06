@@ -1,0 +1,14 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+
+# Kotlin daemon sessions
+.kotlin/
+
+# macOS
+.DS_Store
+
+# Baseline profile generated output (regenerate per release)
+# Keep checked-in rules under baselineprofile/ if you add custom rules manually.

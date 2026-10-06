@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">時間表</string>
+    <string name="complication_dynamic_class">課堂 / 電量</string>
+    <string name="complication_all_in_one">課堂資訊</string>
+    <string name="tile_countdown">課堂倒數</string>
+    <string name="tile_full_schedule">完整課表</string>
+</resources>
