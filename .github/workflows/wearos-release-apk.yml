@@ -23,9 +23,9 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - uses: android-actions/setup-android@v3
       - name: Install Android platform and build tools
         run: |
+          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -45,9 +45,9 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - uses: android-actions/setup-android@v3
       - name: Install Android platform and build tools
         run: |
+          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
