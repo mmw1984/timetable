@@ -32,7 +32,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Run unit tests
-        run: ./gradlew :app:testReleaseUnitTest --stacktrace
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
 
   release-apk:
     needs: unit-test
