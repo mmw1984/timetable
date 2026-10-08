@@ -870,6 +870,41 @@
             gap: var(--gap-sm);
         }
 
+        /* 批量尋找取代 */
+        .bulk-replace {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: var(--gap-sm);
+            padding: var(--padding-sm) var(--padding-lg) 0;
+            align-items: center;
+        }
+
+        .bulk-replace input {
+            width: 100%;
+            min-width: 0;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 13px;
+        }
+
+        .bulk-replace input:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 1px;
+        }
+
+        @media (max-width: 480px) {
+            .bulk-replace {
+                grid-template-columns: 1fr;
+            }
+
+            .bulk-replace .btn {
+                width: 100%;
+            }
+        }
+
         .custom-row {
             display: grid;
             grid-template-columns: 52px 1fr;
@@ -1044,6 +1079,11 @@
                 <button class="modal-tab" data-day="4">Day 4</button>
                 <button class="modal-tab" data-day="5">Day 5</button>
                 <button class="modal-tab" data-day="6">Day 6</button>
+            </div>
+            <div class="bulk-replace">
+                <input id="bulk-find" type="text" maxlength="40" placeholder="尋找：例如 PHY WKW 511" aria-label="尋找課程">
+                <input id="bulk-replace" type="text" maxlength="40" placeholder="取代為：例如 PHY WKW 501" aria-label="取代為">
+                <button class="btn primary" id="bulk-apply">全部取代</button>
             </div>
             <div class="modal-body" id="customize-body">
                 <!-- 動態內容：8 個時段輸入框 -->
@@ -1298,6 +1338,9 @@
 
                 saveBtn.addEventListener('click', () => this.saveCustomSubjects());
                 resetBtn.addEventListener('click', () => this.resetCustomSubjects());
+
+                const bulkApply = document.getElementById('bulk-apply');
+                if (bulkApply) bulkApply.addEventListener('click', () => this.applyBulkReplace());
             }
 
             openCustomizeModal() {
@@ -1356,6 +1399,67 @@
                 document.getElementById('customize-overlay').classList.remove('show');
                 this.updateCustomizeDot();
                 this.refreshAfterCustomize();
+            }
+
+            // 一次過取代所有 Day 完全相符的課程（例如全部 PHY WKW 511 → PHY WKW 501）
+            applyBulkReplace() {
+                const findInput = document.getElementById('bulk-find');
+                const replaceInput = document.getElementById('bulk-replace');
+                const find = findInput ? findInput.value.trim() : '';
+                const replace = replaceInput ? replaceInput.value.trim() : '';
+
+                if (!find) {
+                    alert('請先輸入要尋找的課程（例如 PHY WKW 511）');
+                    return;
+                }
+                if (!replace) {
+                    alert('請輸入取代為的課程');
+                    return;
+                }
+
+                const custom = getCustomSubjects();
+                const defaults = (typeof SUBJECT_SCHEDULE !== 'undefined') ? SUBJECT_SCHEDULE : {};
+                let count = 0;
+
+                for (let d = 1; d <= 6; d++) {
+                    const dayKey = String(d);
+                    for (let p = 1; p <= 8; p++) {
+                        const periodKey = String(p);
+                        const current = (custom[dayKey] && custom[dayKey][periodKey])
+                            || (defaults[d] && defaults[d][p])
+                            || '課程';
+                        if (current.trim() === find) {
+                            // 取代後與預設相同就不必儲存，保持儲存最小
+                            if (replace === ((defaults[d] && defaults[d][p]) || '課程')) {
+                                if (custom[dayKey]) {
+                                    delete custom[dayKey][periodKey];
+                                    if (Object.keys(custom[dayKey]).length === 0) delete custom[dayKey];
+                                }
+                            } else {
+                                if (!custom[dayKey]) custom[dayKey] = {};
+                                custom[dayKey][periodKey] = replace;
+                            }
+                            count++;
+                        }
+                    }
+                }
+
+                if (count === 0) {
+                    alert(`找不到「${find}」，沒有改變任何課程`);
+                    return;
+                }
+
+                try {
+                    localStorage.setItem(CUSTOM_SUBJECT_KEY, JSON.stringify(custom));
+                } catch (e) {
+                    alert('儲存失敗：瀏覽器儲存空間不足或被停用');
+                    return;
+                }
+
+                this.renderCustomizeDay();
+                this.updateCustomizeDot();
+                this.refreshAfterCustomize();
+                alert(`已將 ${count} 個「${find}」時段改為「${replace}」`);
             }
 
             resetCustomSubjects() {
