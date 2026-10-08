@@ -1,10 +1,13 @@
 // Service Worker for Timetable PWA
-const CACHE_NAME = 'timetable-v1';
+const CACHE_NAME = 'timetable-v2';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/timetable-data.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './timetable-data.js',
+  './manifest.json',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Notification queue to store scheduled notifications
@@ -40,25 +43,32 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache first, fallback to network
+// Fetch event - cache-first for instant launch (esp. iOS Home Screen web apps).
+// Navigations are served from cache without a background revalidation request,
+// so a cold start never pays for two network hits. Static assets still
+// revalidate in the background for next launch.
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const isNavigation = event.request.mode === 'navigate';
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return response
+        // Cache hit - return response immediately
         if (response) {
-          console.log('[SW] Serving from cache:', event.request.url);
-
-          // Update cache in background for next time
-          fetch(event.request).then((freshResponse) => {
-            if (freshResponse && freshResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, freshResponse);
-              });
-            }
-          }).catch(() => {
-            // Network failed, but we have cached version
-          });
+          // Background revalidate for non-navigation assets only
+          if (!isNavigation) {
+            fetch(event.request).then((freshResponse) => {
+              if (freshResponse && freshResponse.status === 200) {
+                caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(event.request, freshResponse);
+                });
+              }
+            }).catch(() => {
+              // Network failed, but we have cached version
+            });
+          }
 
           return response;
         }
@@ -113,7 +123,7 @@ self.addEventListener('notificationclick', (event) => {
         }
         // Otherwise open a new window
         if (clients.openWindow) {
-          return clients.openWindow('/');
+          return clients.openWindow('./');
         }
       })
   );
@@ -132,8 +142,8 @@ self.addEventListener('message', (event) => {
       const timeoutId = setTimeout(() => {
         self.registration.showNotification(title, {
           body: body,
-          icon: '/manifest.json',
-          badge: '/manifest.json',
+          icon: './icon-192.png',
+          badge: './icon-192.png',
           vibrate: [200, 100, 200],
           tag: `timetable-${id || Date.now()}`,
           requireInteraction: false,
@@ -196,7 +206,7 @@ self.addEventListener('periodicsync', (event) => {
 async function updateTimetableCache() {
   try {
     const cache = await caches.open(CACHE_NAME);
-    await cache.add('/timetable-data.js');
+    await cache.add('./timetable-data.js');
     console.log('[SW] Timetable cache updated');
   } catch (error) {
     console.error('[SW] Failed to update timetable cache:', error);
