@@ -5,14 +5,15 @@ name: wearos-baseline-profile
 # baseline-prof.txt back to this branch. That push auto-triggers
 # wearos-release-apk.yml, which bakes the profile into the release APK.
 #
-# Defaults target the latest Wear OS (API 37 = Wear OS 7). If the image is
-# unavailable, re-run with api-level 36 (Wear OS 6) or 35 (5.1).
+# Defaults target the latest Wear OS available in the stable SDK repo
+# (API 36 = Wear OS 6). API 37 is not published there yet; re-run with
+# api-level 37 once it is.
 on:
   workflow_dispatch:
     inputs:
       api-level:
-        description: "Emulator API level (Wear OS 7 = 37, 6 = 36, 5.1 = 35)"
-        default: "37"
+        description: "Emulator API level (Wear OS 6 = 36, 5.1 = 35)"
+        default: "36"
         type: string
       target:
         description: "System image target"
@@ -50,10 +51,16 @@ jobs:
       - name: Install build prerequisites
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-37" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify generate task exists
+        run: |
+          cd wearos
+          chmod +x gradlew
+          ./gradlew :app:tasks --all | grep -q "generateReleaseBaselineProfile"
 
       - name: Generate baseline profile on Wear emulator
         uses: reactivecircus/android-emulator-runner@v2
