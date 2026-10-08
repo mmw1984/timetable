@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.timetable.wear.baselineprofile"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 35
