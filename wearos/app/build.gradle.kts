@@ -24,8 +24,21 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            // Keep release optimizations while allowing direct ADB updates during development.
-            signingConfig = signingConfigs.getByName("debug")
+            // Stable release signing: CI decodes the keystore from the
+            // ANDROID_KEYSTORE_BASE64 secret (see .github/workflows). Local builds
+            // without the env vars fall back to the debug key for ADB installs.
+            val keystorePath = System.getenv("RELEASE_KEYSTORE_FILE") ?: "release.keystore"
+            if (file(keystorePath).exists()) {
+                signingConfigs.create("release") {
+                    storeFile = file(keystorePath)
+                    storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+                    keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                    keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+                }
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
