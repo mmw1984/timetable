@@ -79,10 +79,18 @@ data class PeriodInfo(
         }
 
     private fun timeToSeconds(time: String): Int {
+        TimeSecondsCache[time]?.let { return it }
         val parts = time.split(":")
         if (parts.size < 2) return 0
-        return (parts[0].toIntOrNull() ?: 0) * 3600 +
+        val seconds = (parts[0].toIntOrNull() ?: 0) * 3600 +
                 (parts[1].toIntOrNull() ?: 0) * 60 +
                 (parts.getOrElse(2) { "0" }.toIntOrNull() ?: 0)
+        // Distinct clock times are few; memoize (called every second for countdown).
+        if (TimeSecondsCache.size < 256) TimeSecondsCache[time] = seconds
+        return seconds
+    }
+
+    companion object {
+        private val TimeSecondsCache = java.util.concurrent.ConcurrentHashMap<String, Int>()
     }
 }

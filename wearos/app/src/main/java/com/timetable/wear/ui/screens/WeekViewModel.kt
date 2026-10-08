@@ -44,8 +44,8 @@ class WeekViewModel @Inject constructor(
     fun load() {
         viewModelScope.launch {
             _isLoading.value = true
-            // Ensure engine/repository initialized
-            try { engine.start() } catch (_: Exception) {}
+            // Ensure data is ready without starting the 1s home ticker.
+            try { engine.ensureReady() } catch (_: Exception) {}
             val data = repository.data.value
             val allDates = TimetableLogic.availableSchoolDates(data.dayRotation, data.specialDates)
             val today = LocalDate.now()

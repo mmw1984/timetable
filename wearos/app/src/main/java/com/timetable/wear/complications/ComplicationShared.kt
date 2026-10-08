@@ -10,7 +10,16 @@ import java.util.Locale
 fun parseSubject(subject: String): String {
     val trimmed = subject.trim()
     if (trimmed.isEmpty()) return trimmed
-    val firstWord = trimmed.split(SUBJECT_SPLIT_REGEX).first()
+    // First whitespace-separated token without Regex allocs (called on every tile/complication update).
+    var end = trimmed.length
+    for (i in trimmed.indices) {
+        val c = trimmed[i]
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            end = i
+            break
+        }
+    }
+    val firstWord = if (end == trimmed.length) trimmed else trimmed.substring(0, end)
     return if (firstWord.any { it.isCjk() }) trimmed else firstWord
 }
 
@@ -35,8 +44,6 @@ fun getBatteryLevel(context: Context): Int {
 fun formatBatteryText(level: Int): String = if (level < 0) "—" else "$level%"
 
 fun isActiveTimedPeriod(period: PeriodInfo): Boolean = period.type in ACTIVE_TIMED_TYPES
-
-private val SUBJECT_SPLIT_REGEX = Regex("\\s+")
 
 private val ACTIVE_TIMED_TYPES = setOf(
     PeriodInfo.PeriodType.PERIOD,

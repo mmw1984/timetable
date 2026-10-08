@@ -62,9 +62,8 @@ class TimetableFetcher : TimetableRemoteSource {
 
     internal fun parseDayRotation(text: String): Map<String, Int> {
         val result = mutableMapOf<String, Int>()
-        val regex = Regex("""([A-Za-z]+ \d{1,2}, \d{4}) \([A-Za-z]+\): Day (\d+)""")
         for (line in text.lines()) {
-            val match = regex.find(line) ?: continue
+            val match = DayRotationRegex.find(line) ?: continue
             val date = try {
                 LocalDate.parse(match.groupValues[1], dayFormatter)
             } catch (_: DateTimeParseException) {
@@ -90,10 +89,9 @@ class TimetableFetcher : TimetableRemoteSource {
             }
         }
 
-        val headerRegex = Regex("""### Special Timetable ([A-E])""")
         for (line in text.lines()) {
             val trimmed = line.trim()
-            val header = headerRegex.find(trimmed)
+            val header = SpecialHeaderRegex.find(trimmed)
             if (header != null) {
                 saveTimetable()
                 currentKey = "special${header.groupValues[1]}"
@@ -228,5 +226,7 @@ class TimetableFetcher : TimetableRemoteSource {
         val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
         val TIME_RANGE_REGEX = Regex("""(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})""")
         val DATE_RANGE_REGEX = Regex("""^(.+?)\s*-\s*(.+)$""")
+        val DayRotationRegex = Regex("""([A-Za-z]+ \d{1,2}, \d{4}) \([A-Za-z]+\): Day (\d+)""")
+        val SpecialHeaderRegex = Regex("""### Special Timetable ([A-E])""")
     }
 }

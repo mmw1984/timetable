@@ -1,8 +1,5 @@
 package com.timetable.wear.tiles
 
-import android.content.ComponentName
-import androidx.wear.protolayout.ActionBuilders
-import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.material3.Typography
@@ -10,7 +7,6 @@ import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
 import androidx.wear.protolayout.material3.textEdgeButton
-import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders.TileRequest
 import androidx.wear.tiles.TileBuilders.Tile
@@ -39,41 +35,74 @@ class CountdownTileService : TileService() {
 
     override fun onTileRequest(requestParams: TileRequest): ListenableFuture<Tile> =
         serviceScope.future {
-            val snapshot = engine.getTodaySnapshot()
+            // Use tile snapshot so weekends/holidays fall forward to the next school day,
+            // matching FullScheduleTileService behaviour.
+            val snapshot = engine.getTileSnapshot() ?: engine.getTodaySnapshot()
             if (snapshot == null) {
                 return@future buildTile(loadingLayout(requestParams), freshnessMillis = 60_000L)
             }
-            // Build per-minute timeline entries so 15:12 → 15:11 → ... updates without re-request
-            val layouts = mutableListOf<LayoutElement>()
-            val baseSnapshot = snapshot
-            // Determine target for countdown: current if timed else next
-            val isTimedBase = isActiveTimedPeriod(baseSnapshot.currentPeriod) && baseSnapshot.currentPeriod.end.isNotBlank()
-            val baseRemaining = if (isTimedBase) {
-                remainingSecondsFor(baseSnapshot.currentPeriod.end).coerceAtLeast(0)
-            } else {
-                baseSnapshot.nextPeriod?.let { secondsUntil(it.start).coerceAtLeast(0) } ?: 0
+            // Single fresh entry per request: the system re-requests on freshness expiry,
+            // so the period label can never go stale across a period boundary (the old
+            // 30-entry pre-built timeline kept showing the previous period with 00:00).
+            // This also saves CPU/memory building 30 layouts on every tile request.
+            if (snapshot.isNextDay) {
+                return@future buildTile(
+                    nextDayLayout(snapshot, requestParams),
+                    freshnessMillis = 300_000L
+                )
             }
-            val count = (baseRemaining / 60).coerceIn(1, 30) + 1
-            repeat(count.coerceAtMost(30)) { offset ->
-                val remaining = (baseRemaining - offset * 60).coerceAtLeast(0)
-                val layout = countdownLayoutForRemaining(baseSnapshot, requestParams, remaining)
-                layouts.add(layout)
+            if (snapshot.timetableType == TimetableType.NONE || snapshot.dayCycle == null) {
+                return@future buildTile(
+                    emptyLayout(requestParams),
+                    freshnessMillis = 300_000L
+                )
             }
-            if (layouts.size == 1) {
-                buildTile(layouts.first(), freshnessMillis = 60_000L)
-            } else {
-                buildTimelineTile(layouts, freshnessMillis = 60_000L)
-            }
+            val remaining = currentRemainingSeconds(snapshot)
+            buildTile(
+                countdownLayout(snapshot, requestParams, remaining),
+                freshnessMillis = 60_000L
+            )
         }
 
-    private fun countdownLayoutForRemaining(
+    private fun currentRemainingSeconds(snapshot: com.timetable.wear.engine.TodaySnapshot): Int {
+        val current = snapshot.currentPeriod
+        return if (isActiveTimedPeriod(current) && current.end.isNotBlank()) {
+            remainingSecondsFor(current.end).coerceAtLeast(0)
+        } else {
+            snapshot.nextPeriod?.let { secondsUntil(it.start).coerceAtLeast(0) } ?: 0
+        }
+    }
+
+    private fun nextDayLayout(
         snapshot: com.timetable.wear.engine.TodaySnapshot,
-        requestParams: TileRequest,
-        remainingOverride: Int
+        requestParams: TileRequest
     ): LayoutElement = materialScope(this, requestParams.deviceConfiguration) {
-        val isNextDay = snapshot.currentPeriod.name == "下次上課"
-        if (!isNextDay && (snapshot.timetableType == TimetableType.NONE || snapshot.dayCycle == null)) {
-            return@materialScope primaryLayout(
+        val dayLabel = snapshot.dayCycle?.let { "Day $it" } ?: snapshot.dateDisplay
+        val title = if (snapshot.dateDisplay.isNotBlank()) {
+            "下次上課 · ${snapshot.dateDisplay} · $dayLabel"
+        } else {
+            "下次上課 · $dayLabel"
+        }
+        primaryLayout(
+            titleSlot = { text(title.layoutString, typography = Typography.TITLE_SMALL) },
+            mainSlot = {
+                Column.Builder()
+                    .addContent(text(snapshot.currentPeriod.subject.layoutString, typography = Typography.BODY_SMALL))
+                    .addContent(text("點擊查看課表".layoutString, typography = Typography.BODY_SMALL))
+                    .build()
+            },
+            bottomSlot = {
+                textEdgeButton(
+                    onClick = openAppClickable(),
+                    labelContent = { text("開啟應用".layoutString) }
+                )
+            }
+        )
+    }
+
+    private fun emptyLayout(requestParams: TileRequest): LayoutElement =
+        materialScope(this, requestParams.deviceConfiguration) {
+            primaryLayout(
                 mainSlot = {
                     Column.Builder()
                         .addContent(text("目前沒有課堂".layoutString, typography = Typography.TITLE_MEDIUM))
@@ -82,36 +111,24 @@ class CountdownTileService : TileService() {
                 },
                 bottomSlot = {
                     textEdgeButton(
-                        onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
-                        labelContent = { text("開啟應用".layoutString) }
-                    )
-                }
-            )
-        }
-        if (isNextDay) {
-            return@materialScope primaryLayout(
-                titleSlot = { text("下次上課 · Day ${snapshot.dayCycle}".layoutString, typography = Typography.TITLE_SMALL) },
-                mainSlot = {
-                    Column.Builder()
-                        .addContent(text(snapshot.currentPeriod.subject.layoutString, typography = Typography.BODY_SMALL))
-                        .addContent(text("點擊查看課表".layoutString, typography = Typography.BODY_SMALL))
-                        .build()
-                },
-                bottomSlot = {
-                    textEdgeButton(
-                        onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
+                        onClick = openAppClickable(),
                         labelContent = { text("開啟應用".layoutString) }
                     )
                 }
             )
         }
 
+    private fun countdownLayout(
+        snapshot: com.timetable.wear.engine.TodaySnapshot,
+        requestParams: TileRequest,
+        remaining: Int
+    ): LayoutElement = materialScope(this, requestParams.deviceConfiguration) {
         val current = snapshot.currentPeriod
         val isTimed = isActiveTimedPeriod(current) && current.end.isNotBlank()
         val periodLabel: String
         val countdownText: String
         if (isTimed) {
-            countdownText = formatCountdown(remainingOverride)
+            countdownText = formatCountdown(remaining)
             periodLabel = when (current.type) {
                 PeriodInfo.PeriodType.PERIOD -> "${current.name} · ${parseSubject(current.subject)}"
                 PeriodInfo.PeriodType.BREAK_TIME, PeriodInfo.PeriodType.ASSEMBLY -> current.name
@@ -120,7 +137,7 @@ class CountdownTileService : TileService() {
         } else {
             // FREE → show countdown to next
             val next = snapshot.nextPeriod
-            countdownText = if (next == null) "--:--" else formatCountdown(remainingOverride)
+            countdownText = if (next == null) "--:--" else formatCountdown(remaining)
             periodLabel = next?.let {
                 when (it.type) {
                     PeriodInfo.PeriodType.PERIOD -> "下一堂 ${parseSubject(it.subject)} ${it.start}"
@@ -140,8 +157,9 @@ class CountdownTileService : TileService() {
             "" // already showing next as main when FREE, hide duplicate
         }
 
+        val dayLabel = snapshot.dayCycle?.let { "Day $it" } ?: snapshot.dateDisplay.ifBlank { "今日課表" }
         primaryLayout(
-            titleSlot = { text("Day ${snapshot.dayCycle}".layoutString, typography = Typography.TITLE_SMALL) },
+            titleSlot = { text(dayLabel.layoutString, typography = Typography.TITLE_SMALL) },
             mainSlot = {
                 // No rings per user request: big MM:SS text only
                 Column.Builder()
@@ -152,7 +170,7 @@ class CountdownTileService : TileService() {
             },
             bottomSlot = {
                 textEdgeButton(
-                    onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
+                    onClick = openAppClickable(),
                     labelContent = { text("開啟應用".layoutString) }
                 )
             }
@@ -174,7 +192,7 @@ class CountdownTileService : TileService() {
                 },
                 bottomSlot = {
                     textEdgeButton(
-                        onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
+                        onClick = openAppClickable(),
                         labelContent = { text("開啟應用".layoutString) }
                     )
                 }

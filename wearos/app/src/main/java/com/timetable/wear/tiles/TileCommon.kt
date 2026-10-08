@@ -67,7 +67,8 @@ internal fun MaterialScope.periodCardGroups(
 ): LayoutElementBuilders.LayoutElement {
     // M3E: merged periods (user chose 合併連堂) as full-width pill rows;
     // one period per row so nothing ever truncates, current highlighted.
-    val merged = mergeTileItems(items.filter { it.type == ScheduleItemType.PERIOD })
+    // Cap rows so the tile never overflows on small round screens.
+    val merged = mergeTileItems(items.filter { it.type == ScheduleItemType.PERIOD }).take(MAX_TILE_ROWS)
     if (merged.isEmpty()) {
         return m3Text(
             "今日沒有課程".layoutString,
