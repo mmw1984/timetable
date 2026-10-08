@@ -161,8 +161,8 @@ window.SUBJECT_SCHEDULE = {
     1: {
         1: "ENG KKY 401",
         2: "ENG KKY 401",
-        3: "MACO YPC 401",
-        4: "MACO YPC 401",
+        3: "M2 YPC 401",
+        4: "M2 YPC 401",
         5: "PE LD,WLS G001",
         6: "PE LD,WLS G001",
         7: "PHY WKW 511",
@@ -189,8 +189,8 @@ window.SUBJECT_SCHEDULE = {
         8: "MACO YPC 401"
     },
     4: {
-        1: "MACO YPC 401",
-        2: "MACO YPC 401",
+        1: "M2 YPC 401",
+        2: "M2 YPC 401",
         3: "CEP LWF 401",
         4: "CHIN NKT 401",
         5: "PHY WKW 511",
@@ -205,7 +205,7 @@ window.SUBJECT_SCHEDULE = {
         4: "ENG KKY 401",
         5: "CS LPY 401",
         6: "CS LPY 401",
-        7: "MACO YPC 401",
+        7: "M2 YPC 401",
         8: "CHIN NKT 401"
     },
     6: {
@@ -275,29 +275,60 @@ window.SPECIAL_DATES = {
 };
 
 // 星期五規則：所有星期五使用特殊時間表B
+// NOTE: dateStr 為本地 YYYY-MM-DD，避免 new Date('YYYY-MM-DD') 的 UTC 解析問題
+function parseLocalDate(dateStr) {
+    const parts = String(dateStr).split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
 function isFriday(dateStr) {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     return date.getDay() === 5; // 5 = Friday
 }
 
 // 獲取當天應使用的時間表類型
 function getTimetableType(dateStr) {
     // 檢查是否為特殊日期
-    if (SPECIAL_DATES[dateStr]) {
+    if (typeof SPECIAL_DATES !== 'undefined' && SPECIAL_DATES[dateStr]) {
         return SPECIAL_DATES[dateStr];
     }
-    
+
     // 檢查是否為星期五
     if (isFriday(dateStr)) {
         return "B";
     }
-    
+
     // 默認使用正常時間表
     return "normal";
 }
 
 // 獲取當天的Day週期
 function getDayCycle(dateStr) {
-    return DAY_ROTATION[dateStr] || null;
+    return (typeof DAY_ROTATION !== 'undefined' ? DAY_ROTATION[dateStr] : null) || null;
+}
 
+// ---- 課程自訂 (localStorage 本地覆寫, key 與 index.html 共用) ----
+window.TIMETABLE_CUSTOM_KEY = 'timetable-custom-subjects-v1';
+
+function getCustomSubjects() {
+    try {
+        const raw = localStorage.getItem(window.TIMETABLE_CUSTOM_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+// 取得某一 Day/Period 的實際顯示科目：自訂優先，否則用預設時間表
+function getSubject(day, period) {
+    const custom = getCustomSubjects();
+    if (custom && custom[String(day)] && custom[String(day)][String(period)]) {
+        return custom[String(day)][String(period)];
+    }
+    if (typeof SUBJECT_SCHEDULE !== 'undefined' && SUBJECT_SCHEDULE[day]) {
+        return SUBJECT_SCHEDULE[day][period] || '課程';
+    }
+    return '課程';
 }
