@@ -191,6 +191,7 @@
             grid-template-columns: 1fr 1.5fr;
             gap: var(--gap-lg);
             flex: 1;
+            align-items: start;
         }
 
         .left-panel {
@@ -393,9 +394,8 @@
             display: flex;
             flex-direction: column;
             gap: var(--gap-sm);
-            flex: 1;
-            overflow-y: auto;
-            max-height: 600px;
+            /* 唔用內層 scrollport：之前 max-height:600px + overflow-y:auto
+               令時間表睇落「斷開」＋卡片拉長留白，直接用自然頁面捲動 */
         }
 
         .schedule-item {
@@ -560,12 +560,6 @@
 
             .schedule-section {
                 order: 1;
-            }
-
-            /* 手機版用自然頁面捲動，避免內嵌捲軸在 iOS 造成捲動陷阱 */
-            .schedule-grid {
-                max-height: none;
-                overflow-y: visible;
             }
 
             .title {
@@ -2012,16 +2006,6 @@
 
                     if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
                         itemElement.classList.add('current');
-                        // 只在時間表容器內即時捲動（不觸動整頁 smooth scroll，避免啟動時版面跳動）
-                        requestAnimationFrame(() => {
-                            const grid = document.getElementById('schedule-grid');
-                            if (!grid) return;
-                            const gridRect = grid.getBoundingClientRect();
-                            const itemRect = itemElement.getBoundingClientRect();
-                            if (itemRect.top < gridRect.top || itemRect.bottom > gridRect.bottom) {
-                                grid.scrollTop += (itemRect.top - gridRect.top) - (grid.clientHeight / 2) + (itemRect.height / 2);
-                            }
-                        });
                     }
 
                     itemElement.innerHTML = `
