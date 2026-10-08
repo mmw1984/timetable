@@ -315,8 +315,6 @@ private fun CurrentClassCard(
     modifier: Modifier,
     transformation: SurfaceTransformation
 ) {
-    val countdown by countdownFlow.collectAsStateWithLifecycle()
-    val isTimed = state.isViewingToday && countdown.countdownLabel.isNotEmpty()
     val accent = when (state.currentPeriod.type) {
         PeriodInfo.PeriodType.PERIOD -> SubjectColors.colorFor(state.currentPeriod.subject)
         PeriodInfo.PeriodType.BREAK_TIME, PeriodInfo.PeriodType.ASSEMBLY -> SubjectColors.colorFor(state.currentPeriod.name)
@@ -358,11 +356,24 @@ private fun CurrentClassCard(
                         overflow = TextOverflow.Clip
                     )
                 }
-                if (isTimed) {
-                    CountdownInfo(countdown, state.nextPeriod)
+                if (state.isViewingToday) {
+                    CountdownSlot(countdownFlow, state.nextPeriod)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CountdownSlot(
+    countdownFlow: StateFlow<CountdownState>,
+    nextPeriod: PeriodInfo?
+) {
+    // Isolated so the 1-second ticker only recomposes this small slot,
+    // not the whole CurrentClassCard.
+    val countdown by countdownFlow.collectAsStateWithLifecycle()
+    if (countdown.countdownLabel.isNotEmpty()) {
+        CountdownInfo(countdown, nextPeriod)
     }
 }
 

@@ -12,6 +12,10 @@ fun TimetableTheme(
 ) {
     // Material 3 Expressive: take colors from the system wallpaper theme when available,
     // falling back to the library default scheme otherwise.
-    val colorScheme = dynamicColorScheme(LocalContext.current) ?: ColorScheme()
+    // Remembered so dynamicColorScheme isn't re-queried on every recomposition.
+    val context = LocalContext.current
+    val colorScheme = androidx.compose.runtime.remember(context) {
+        dynamicColorScheme(context) ?: ColorScheme()
+    }
     MaterialTheme(colorScheme = colorScheme, content = content)
 }

@@ -1,18 +1,13 @@
 package com.timetable.wear.tiles
 
-import android.content.ComponentName
-import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.DimensionBuilders.expand
-import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
-import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.material3.Typography
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
 import androidx.wear.protolayout.material3.textEdgeButton
-import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders.TileRequest
 import androidx.wear.tiles.TileBuilders.Tile
@@ -59,7 +54,7 @@ class FullScheduleTileService : TileService() {
                 },
                 bottomSlot = {
                     textEdgeButton(
-                        onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
+                        onClick = openAppClickable(),
                         labelContent = { text("開啟應用".layoutString) }
                     )
                 }
@@ -68,7 +63,7 @@ class FullScheduleTileService : TileService() {
 
     private fun fullLayout(snapshot: com.timetable.wear.engine.TodaySnapshot, requestParams: TileRequest): LayoutElement =
         materialScope(this, requestParams.deviceConfiguration) {
-            val isNextDay = snapshot.currentPeriod.name == "下次上課"
+            val isNextDay = snapshot.isNextDay
             if (!isNextDay && (snapshot.timetableType == TimetableType.NONE || snapshot.dayCycle == null)) {
                 return@materialScope primaryLayout(
                     mainSlot = {
@@ -81,7 +76,7 @@ class FullScheduleTileService : TileService() {
                     },
                     bottomSlot = {
                         textEdgeButton(
-                            onClick = ModifiersBuilders.Clickable.Builder().setOnClick(ActionBuilders.launchAction(ComponentName("com.timetable.wear", "com.timetable.wear.MainActivity"))).build(),
+                            onClick = openAppClickable(),
                             labelContent = { text("開啟應用".layoutString) }
                         )
                     }
@@ -96,15 +91,23 @@ class FullScheduleTileService : TileService() {
                 TimetableType.SPECIAL_E -> "特E"
                 else -> ""
             }
+            val dayLabel = snapshot.dayCycle?.let { "Day$it" } ?: ""
             val headerTitle = if (isNextDay) {
-                "下次上課·Day${snapshot.dayCycle}·$typeShort"
+                // Include the date so "下次上課" is unambiguous on weekends/holidays.
+                val datePart = snapshot.dateDisplay.ifBlank { dayLabel }
+                "下次上課·$datePart·$dayLabel·$typeShort".trim('·')
             } else {
-                "完整課表·Day${snapshot.dayCycle}·$typeShort"
+                "完整課表·$dayLabel·$typeShort".trim('·')
             }
 
-            val currentKey = snapshot.scheduleItems.firstOrNull {
-                it.start == snapshot.currentPeriod.start && it.end == snapshot.currentPeriod.end && it.start.isNotBlank()
-            }?.stableKey
+            // Next-day preview is in the future: never highlight a row as "current".
+            val currentKey = if (isNextDay) {
+                null
+            } else {
+                snapshot.scheduleItems.firstOrNull {
+                    it.start == snapshot.currentPeriod.start && it.end == snapshot.currentPeriod.end && it.start.isNotBlank()
+                }?.stableKey
+            }
 
             primaryLayout(
                 titleSlot = {

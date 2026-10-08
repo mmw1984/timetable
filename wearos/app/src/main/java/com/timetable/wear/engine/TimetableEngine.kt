@@ -59,7 +59,9 @@ data class TodaySnapshot(
     val dayCycle: Int?,
     val currentPeriod: PeriodInfo,
     val nextPeriod: PeriodInfo?,
-    val scheduleItems: List<ScheduleItem>
+    val scheduleItems: List<ScheduleItem>,
+    val isNextDay: Boolean = false,
+    val dateDisplay: String = ""
 )
 
 @Singleton
@@ -91,6 +93,11 @@ class TimetableEngine @Inject constructor(
     suspend fun start() {
         ensureInitialized()
         startTimerIfNeeded()
+    }
+
+    /** Lightweight init for screens/tiles that need data but not the 1s ticker. */
+    suspend fun ensureReady() {
+        ensureInitialized()
     }
 
     fun stop() {
@@ -137,7 +144,9 @@ class TimetableEngine @Inject constructor(
             dayCycle = dayCycle,
             currentPeriod = currentPeriodAt(now, slots),
             nextPeriod = nextPeriodAt(now, slots),
-            scheduleItems = itemsFor(schedule, dayCycle, data.subjectSchedule)
+            scheduleItems = itemsFor(schedule, dayCycle, data.subjectSchedule),
+            isNextDay = false,
+            dateDisplay = formatDateDisplay(today)
         )
     }.getOrNull()
 
@@ -156,16 +165,31 @@ class TimetableEngine @Inject constructor(
         val dayCycle = data.dayRotation[nextDate.toString()]
         val schedule = repository.schedule(type)
         val items = itemsFor(schedule, dayCycle, data.subjectSchedule)
-        val firstSlot = schedule?.periods?.firstOrNull()?.let { p ->
-            val subject = repository.data.value.subjectSchedule[dayCycle]?.get(1) ?: "課程"
-            PeriodInfo(PeriodInfo.PeriodType.FREE, "下次上課", "${formatDateDisplay(nextDate)} · Day ${dayCycle ?: "—"} · $subject", p.start, p.end)
-        } ?: PeriodInfo(PeriodInfo.PeriodType.FREE, "下次上課", formatDateDisplay(nextDate))
+        val firstPeriod = schedule?.periods?.firstOrNull()
+        val firstSubject = dayCycle?.let { data.subjectSchedule[it]?.get(1) } ?: "課程"
+        val firstSlot = if (firstPeriod != null) {
+            PeriodInfo(
+                type = PeriodInfo.PeriodType.FREE,
+                name = "下次上課",
+                start = firstPeriod.start,
+                end = firstPeriod.end,
+                subject = "${formatDateDisplay(nextDate)} · Day ${dayCycle ?: "—"} · $firstSubject"
+            )
+        } else {
+            PeriodInfo(
+                type = PeriodInfo.PeriodType.FREE,
+                name = "下次上課",
+                subject = formatDateDisplay(nextDate)
+            )
+        }
         TodaySnapshot(
             timetableType = type,
             dayCycle = dayCycle,
             currentPeriod = firstSlot,
             nextPeriod = null,
-            scheduleItems = items
+            scheduleItems = items,
+            isNextDay = true,
+            dateDisplay = formatDateDisplay(nextDate)
         )
     }.getOrNull()
 

@@ -28,7 +28,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            engine.start()
+            engine.ensureReady()
             repository.urlConfig.collectLatest { config ->
                 _urlInput.value = config.base
             }
