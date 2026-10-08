@@ -394,8 +394,32 @@
             display: flex;
             flex-direction: column;
             gap: var(--gap-sm);
-            /* 唔用內層 scrollport：之前 max-height:600px + overflow-y:auto
-               令時間表睇落「斷開」＋卡片拉長留白，直接用自然頁面捲動 */
+            /* 桌面版：時間表本身可以碌（max 行數內），唔使成頁碌落去 */
+            overflow-y: auto;
+            max-height: min(72vh, 760px);
+            scrollbar-gutter: stable;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+        }
+
+        /* 明顯嘅 scrollbar，等用家知下面仲有得碌 */
+        .schedule-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .schedule-grid::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 8px;
+        }
+
+        .schedule-grid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .schedule-grid:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
         }
 
         .schedule-item {
@@ -560,6 +584,12 @@
 
             .schedule-section {
                 order: 1;
+            }
+
+            /* 手機版用自然頁面捲動，避免內嵌捲軸在觸控上造成捲動陷阱 */
+            .schedule-grid {
+                max-height: none;
+                overflow-y: visible;
             }
 
             .title {
@@ -1052,7 +1082,7 @@
                     <h2 class="schedule-title" id="schedule-title">今日時間表</h2>
                     <div class="day-indicator" id="day-indicator">載入中...</div>
                 </div>
-                <div class="schedule-grid" id="schedule-grid">
+                <div class="schedule-grid" id="schedule-grid" tabindex="0" role="region" aria-label="時間表列表">
                     <!-- 動態內容 -->
                 </div>
             </div>
@@ -2006,6 +2036,19 @@
 
                     if (this.isTimeInRange(currentTimeStr, item.start, item.end)) {
                         itemElement.classList.add('current');
+                        // 首次載入時將當下時段碌到可見位置（只做一次，之後唔搶用家個 scroll）
+                        if (!this.hasAutoScrolled) {
+                            this.hasAutoScrolled = true;
+                            requestAnimationFrame(() => {
+                                const grid = document.getElementById('schedule-grid');
+                                if (!grid || grid.scrollHeight <= grid.clientHeight) return;
+                                const gridRect = grid.getBoundingClientRect();
+                                const itemRect = itemElement.getBoundingClientRect();
+                                if (itemRect.top < gridRect.top || itemRect.bottom > gridRect.bottom) {
+                                    grid.scrollTop += (itemRect.top - gridRect.top) - (grid.clientHeight / 2) + (itemRect.height / 2);
+                                }
+                            });
+                        }
                     }
 
                     itemElement.innerHTML = `
