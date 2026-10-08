@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.timetable.wear"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.timetable.wear"
         minSdk = 35
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 3
         versionName = "1.2"
     }
