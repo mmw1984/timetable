@@ -5,6 +5,7 @@ import com.timetable.wear.data.local.BundledTimetableSource
 import com.timetable.wear.data.local.AssetBundledTimetableSource
 import com.timetable.wear.data.local.TimetableCache
 import com.timetable.wear.data.local.TimetableCacheStore
+import com.timetable.wear.data.local.UiPreferences
 import com.timetable.wear.data.remote.TimetableFetcher
 import com.timetable.wear.data.remote.TimetableRemoteSource
 import com.timetable.wear.data.repository.TimetableRepository
@@ -26,6 +27,12 @@ object AppModule {
     @Singleton
     fun provideTimetableCache(@ApplicationContext context: Context): TimetableCacheStore {
         return TimetableCache(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUiPreferences(@ApplicationContext context: Context): UiPreferences {
+        return UiPreferences(context)
     }
 
     @Provides
