@@ -162,9 +162,12 @@ internal fun MaterialScope.periodCardGroups(
                 if (row.size == 1) {
                     val item = row[0]
                     addContent(
+                        // NOTE: explicit 48dp height — a wrap() Row mis-measures
+                        // fixed-height buttons and the pill overflows into
+                        // neighbouring rows (seen on-watch as overlap).
                         LayoutElementBuilders.Row.Builder()
                             .setWidth(expand())
-                            .setHeight(wrap())
+                            .setHeight(dp(TILE_GRID_PILL_HEIGHT_DP))
                             .addContent(spacerDp(sideDp, 1))
                             .addContent(
                                 periodDataCard(

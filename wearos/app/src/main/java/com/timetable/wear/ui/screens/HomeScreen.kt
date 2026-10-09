@@ -1,6 +1,7 @@
 package com.timetable.wear.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,6 +106,17 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             item {
+                if (useDense) {
+                    DenseDateNavRow(
+                        state = scheduleState,
+                        onPrevious = viewModel::prevDay,
+                        onNext = viewModel::nextDay,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                    )
+                } else {
                     DateNavigationCard(
                         state = scheduleState,
                         onPrevious = viewModel::prevDay,
@@ -115,6 +127,7 @@ fun HomeScreen(
                             .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
                         transformation = SurfaceTransformation(transformationSpec)
                     )
+                }
             }
 
             if (scheduleState.isLoading) {
@@ -138,8 +151,7 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
-                                    .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
-                                transformation = SurfaceTransformation(transformationSpec)
+                                    .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
                             )
                         }
                     } else {
@@ -171,14 +183,24 @@ fun HomeScreen(
                 }
 
                 item {
-                    WeekOverviewEntryCard(
-                        onClick = onOpenWeek,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .transformedHeight(this, transformationSpec)
-                            .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
-                        transformation = SurfaceTransformation(transformationSpec)
-                    )
+                    if (useDense) {
+                        DenseWeekRow(
+                            onClick = onOpenWeek,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                        )
+                    } else {
+                        WeekOverviewEntryCard(
+                            onClick = onOpenWeek,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
+                            transformation = SurfaceTransformation(transformationSpec)
+                        )
+                    }
                 }
 
                 if (mergedItems.isEmpty()) {
@@ -532,7 +554,7 @@ private fun BreakItemCard(
     // Breaks use compact height and vertically centered, keep left-aligned (not horizontal Center)
     Box(
         modifier = modifier
-            .height(32.dp)
+            .heightIn(min = 32.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
             .background(
                 if (isCurrent) MaterialTheme.colorScheme.primaryContainer
@@ -622,9 +644,10 @@ private fun ScheduleItemCard(
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = item.start,
-                        modifier = Modifier.width(42.dp),
                         style = denseLabelSmall(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip
                     )
                     Column(
                         modifier = Modifier.weight(1f),
@@ -724,8 +747,7 @@ private fun isCurrentMerged(item: ScheduleItem, state: HomeScheduleState): Boole
 private fun DenseCurrentNextCard(
     state: HomeScheduleState,
     countdownFlow: StateFlow<CountdownState>,
-    modifier: Modifier,
-    transformation: SurfaceTransformation
+    modifier: Modifier
 ) {
     val countdown by countdownFlow.collectAsStateWithLifecycle()
     val isTimed = state.isViewingToday && countdown.countdownLabel.isNotEmpty()
@@ -740,8 +762,14 @@ private fun DenseCurrentNextCard(
             else -> "下堂 ${next.name} ${next.start}"
         }
     } ?: "已放學"
-    Card(modifier = modifier, transformation = transformation) {
-        Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = true), contentAlignment = Alignment.CenterStart) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
             Column(verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -777,6 +805,70 @@ private fun DenseCurrentNextCard(
             }
         }
     }
+
+@Composable
+private fun DenseDateNavRow(
+    state: HomeScheduleState,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        DateNavigationControls(state, onPrevious, onNext)
+    }
+}
+
+@Composable
+private fun DenseWeekRow(
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "查看一週",
+                    style = denseTitleSmall(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+                Text(
+                    text = "未來 7 個上課日概覽",
+                    style = denseBodySmall(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+            }
+            Text(
+                text = "→",
+                style = denseTitleSmall(),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
 }
 
 @Composable
@@ -791,7 +883,7 @@ private fun DenseScheduleRow(
     }
     Box(
         modifier = modifier
-            .height(46.dp)
+            .heightIn(min = 46.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
             .background(
                 if (isCurrent) MaterialTheme.colorScheme.primaryContainer
@@ -810,9 +902,10 @@ private fun DenseScheduleRow(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = item.start,
-                modifier = Modifier.width(40.dp),
                 style = denseLabelSmall(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Clip
             )
             Column(
                 modifier = Modifier.weight(1f),
@@ -845,7 +938,7 @@ private fun DenseBreakRow(
     val dotColor = SubjectColors.colorFor(item.displayName)
     Box(
         modifier = modifier
-            .height(28.dp)
+            .heightIn(min = 28.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
             .background(
                 if (isCurrent) MaterialTheme.colorScheme.primaryContainer
