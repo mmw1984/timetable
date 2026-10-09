@@ -77,4 +77,14 @@ class TileGroupsTest {
         assertTrue(resolveDenseLayout(DenseLayoutMode.AUTO, 225, 200))
         assertFalse(resolveDenseLayout(DenseLayoutMode.AUTO, 225, 260))
     }
+
+    @Test
+    fun `compact budget leaves room for the overflow pill`() {
+        // small round ~192dp screen: 2 rows (1 group + "+N 更多")
+        assertEquals(2, compactRowBudget(192))
+        // large round ~227dp screen: 3 rows
+        assertEquals(3, compactRowBudget(227))
+        // unknown height falls back safely instead of clipping everything
+        assertEquals(2, compactRowBudget(0))
+    }
 }

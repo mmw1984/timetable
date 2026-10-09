@@ -123,7 +123,8 @@ class FullScheduleTileService : TileService() {
                         snapshot.scheduleItems,
                         currentKey,
                         merge,
-                        requestParams.deviceConfiguration.screenWidthDp
+                        requestParams.deviceConfiguration.screenWidthDp,
+                        requestParams.deviceConfiguration.screenHeightDp
                     )
                 }
             )
