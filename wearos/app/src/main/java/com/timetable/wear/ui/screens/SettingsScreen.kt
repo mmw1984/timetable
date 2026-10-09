@@ -31,6 +31,7 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import com.timetable.wear.data.local.DenseLayoutMode
 
 @Composable
 fun SettingsScreen(
@@ -40,6 +41,8 @@ fun SettingsScreen(
     val urlInput by viewModel.urlInput.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val denseMode by viewModel.denseMode.collectAsStateWithLifecycle()
+    val mergeConsecutive by viewModel.mergeConsecutive.collectAsStateWithLifecycle()
     val transformationSpec = rememberTransformationSpec()
     val columnState = rememberTransformingLazyColumnState()
 
@@ -102,6 +105,30 @@ fun SettingsScreen(
                 }
             }
             item {
+                Button(
+                    onClick = viewModel::cycleDenseMode,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
+                    Text("版面：${DenseLayoutMode.displayText(denseMode)}", maxLines = 1)
+                }
+            }
+            item {
+                Button(
+                    onClick = { viewModel.setMergeConsecutive(!mergeConsecutive) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
+                    Text(if (mergeConsecutive) "連堂合併：開" else "連堂合併：關", maxLines = 1)
+                }
+            }
+            item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,7 +138,7 @@ fun SettingsScreen(
                 ) {
                     Text("時間表 Wear OS", style = MaterialTheme.typography.bodySmall)
                     Text(
-                        text = "v1.2",
+                        text = "v1.3",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
