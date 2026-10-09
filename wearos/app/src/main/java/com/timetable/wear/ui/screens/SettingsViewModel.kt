@@ -85,8 +85,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun requestScheduleTileUpdate() {
+        // tiles 1.6.x: TileService.requestUpdate() was replaced by getUpdater().
         runCatching {
-            TileService.requestUpdate(appContext, FullScheduleTileService::class.java)
+            TileService.getUpdater(appContext).requestUpdate(FullScheduleTileService::class.java)
         }
     }
 }

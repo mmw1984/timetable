@@ -100,9 +100,9 @@ class FullScheduleTileService : TileService() {
             val headerTitle = if (isNextDay) {
                 // Include the date so "下次上課" is unambiguous on weekends/holidays.
                 val datePart = snapshot.dateDisplay.ifBlank { dayLabel }
-                "下次上課·$datePart·$dayLabel·$typeShort·${groupCount}組".trim('·')
+                "下次·$datePart·$dayLabel·$typeShort·${groupCount}組".trim('·')
             } else {
-                "完整課表·$dayLabel·$typeShort·${groupCount}組".trim('·')
+                "課表·$dayLabel·$typeShort·${groupCount}組".trim('·')
             }
 
             // Next-day preview is in the future: never highlight a row as "current".
