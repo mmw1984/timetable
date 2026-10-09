@@ -49,7 +49,7 @@ internal fun MaterialScope.periodDataCard(
     width: ContainerDimension = expand()
 ) = textButton(
     // 2-per-row grid: 3 short rows always fit vertically; textButton's
-    // tight padding fits "1-2MACO" where DataCard slots truncate it.
+    // tight padding fits "1-2 MACO" where DataCard slots truncate it.
     onClick = openAppClickable(),
     width = width,
     height = dp(TILE_GRID_PILL_HEIGHT_DP),
@@ -57,7 +57,7 @@ internal fun MaterialScope.periodDataCard(
     colors = if (isCurrent) filledVariantButtonColors() else filledTonalButtonColors(),
     labelContent = {
         m3Text(
-            "$orderLabel$subjectShort".layoutString,
+            "$orderLabel $subjectShort".layoutString,
             typography = Typography.LABEL_SMALL
         )
     }
