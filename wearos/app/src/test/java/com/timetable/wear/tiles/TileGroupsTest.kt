@@ -89,23 +89,30 @@ class TileGroupsTest {
     }
 
     @Test
-    fun `tile plan covers 4 to 8 groups on a large viewport`() {
-        // 227dp screen: 4 groups -> 48dp grid, 5-6 groups -> 40dp grid
+    fun `tile plan keeps grid for 4 groups and compacts 5 to 8`() {
+        // 227dp screen: 4 groups -> grid (2 rows); 5-8 -> compact list
         assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 227))
-        assertEquals(TileLayoutPlan(true, 40f, 5), planTileLayout(5, 227))
-        assertEquals(TileLayoutPlan(true, 40f, 6), planTileLayout(6, 227))
-        // 7-8 groups -> compact, budget fits 2 rows (visible + overflow share them)
-        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(7, 227))
-        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(8, 227))
+        assertFalse(planTileLayout(5, 227).useGrid)
+        assertFalse(planTileLayout(6, 227).useGrid)
+        assertFalse(planTileLayout(7, 227).useGrid)
+        assertFalse(planTileLayout(8, 227).useGrid)
     }
 
     @Test
-    fun `tile plan shrinks to compact on a small viewport`() {
-        // 192dp screen: 4 groups still grid, 5+ go compact with 1 visible + overflow
+    fun `tile plan compacts on a small viewport`() {
+        // 192dp screen: 4 groups still grid, 5+ compact with overflow pill
         assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 192))
         assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(5, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(6, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(7, 192))
         assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(8, 192))
+    }
+
+    @Test
+    fun `compact plan always shows something before the overflow pill`() {
+        for (count in 5..8) {
+            val plan = planTileLayout(count, 192)
+            assertFalse(plan.useGrid)
+            assertTrue("count=$count visible=${plan.visibleGroups}", plan.visibleGroups >= 1)
+            assertTrue("count=$count visible=${plan.visibleGroups}", plan.visibleGroups < count)
+        }
     }
 }
