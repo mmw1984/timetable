@@ -138,7 +138,7 @@ internal fun MaterialScope.periodCardGroups(
     }
     val plan = planTileLayout(groups.size, screenHeightDp)
     if (plan.useGrid) {
-        return gridGroups(groups, currentKey, screenWidthDp, plan.gridPillHeightDp)
+        return gridGroups(groups, currentKey)
     }
     // Compact single-column list sized to the budget; always leaves room
     // for the "+N 更多" overflow pill so content is never silently clipped.
@@ -153,13 +153,12 @@ internal fun MaterialScope.periodCardGroups(
         rows.add(compactRowCard("＋${overflow} 更多", false))
     }
     return Column.Builder()
+        // expand() so the list uses the viewport the system actually gives us
+        // instead of a wrap() height the renderer may clip.
         .setWidth(expand())
-        .setHeight(wrap())
+        .setHeight(expand())
         .apply {
-            rows.forEachIndexed { index, row ->
-                addContent(row)
-                if (index != rows.lastIndex) addContent(spacerDp(1, TILE_ROW_GAP_DP))
-            }
+            rows.forEach { row -> addContent(row) }
         }
         .build()
 }
@@ -180,7 +179,10 @@ internal fun planTileLayout(groupCount: Int, screenHeightDp: Int): TileLayoutPla
     val gridRows = (groupCount + 1) / 2
     val gridPillH = if (gridRows <= 2) TILE_GRID_PILL_HEIGHT_DP else TILE_GRID_PILL_HEIGHT_SHORT_DP
     val gridH = (gridRows * (gridPillH + TILE_ROW_GAP_DP)).toInt()
-    if (groupCount <= 6 && gridH <= budget) {
+    // Grid only for up to 4 groups (2 rows): official guidance is to keep tile
+    // content simple and avoid custom spacing, and 3+ rows reliably clipped
+    // the bottom row on small round screens even when space looked free.
+    if (groupCount <= 4 && gridH <= budget) {
         return TileLayoutPlan(useGrid = true, gridPillHeightDp = gridPillH, visibleGroups = groupCount)
     }
     val maxRows = compactRowBudget(screenHeightDp)
@@ -196,71 +198,36 @@ internal fun compactRowBudget(screenHeightDp: Int): Int {
 
 private fun MaterialScope.gridGroups(
     groups: List<ScheduleItem>,
-    currentKey: String?,
-    screenWidthDp: Int,
-    pillHeightDp: Float
+    currentKey: String?
 ): LayoutElementBuilders.LayoutElement {
-    val halfWidthDp = ((screenWidthDp - TILE_GRID_SIDE_PADDING_DP) / 2).coerceAtLeast(72)
-    val sideDp = (halfWidthDp / 2).coerceAtLeast(8)
-    val rows = mutableListOf<LayoutElementBuilders.LayoutElement>()
-    groups.chunked(2).forEach { row ->
-        rows.add(gridRow(row, currentKey, halfWidthDp, sideDp, pillHeightDp))
-    }
+    // Use the official M3 buttonGroup: it owns the internal spacing/margins,
+    // so rows add up to exactly what the renderer draws. (Hand-rolled rows
+    // plus our own dp arithmetic is what caused repeated clipping.)
+    // A lone orphan pill sits in a half-width group, which the group centres.
     return Column.Builder()
         .setWidth(expand())
         .setHeight(wrap())
         .apply {
-            rows.forEachIndexed { index, row ->
-                addContent(row)
-                if (index != rows.lastIndex) addContent(spacerDp(1, TILE_ROW_GAP_DP))
+            groups.chunked(2).forEach { row ->
+                addContent(
+                    buttonGroup(
+                        width = expand(),
+                        height = wrap()
+                    ) {
+                        row.forEach { item ->
+                            buttonGroupItem {
+                                periodDataCard(
+                                    orderLabel = gridOrderLabel(item),
+                                    subjectShort = parseSubject(item.subject).take(4),
+                                    isCurrent = item.stableKey == currentKey
+                                )
+                            }
+                        }
+                    }
+                )
             }
         }
         .build()
-}
-
-private fun MaterialScope.gridRow(
-    row: List<ScheduleItem>,
-    currentKey: String?,
-    halfWidthDp: Int,
-    sideDp: Int,
-    pillHeightDp: Float
-): LayoutElementBuilders.LayoutElement {
-    if (row.size == 1) {
-        val item = row[0]
-        // NOTE: explicit row height — a wrap() Row mis-measures
-        // fixed-height buttons and the pill overflows into
-        // neighbouring rows (seen on-watch as overlap).
-        return LayoutElementBuilders.Row.Builder()
-            .setWidth(expand())
-            .setHeight(dp(pillHeightDp))
-            .addContent(spacerDp(sideDp, 1))
-            .addContent(
-                periodDataCard(
-                    orderLabel = gridOrderLabel(item),
-                    subjectShort = parseSubject(item.subject).take(4),
-                    isCurrent = item.stableKey == currentKey,
-                    width = dp(halfWidthDp.toFloat()),
-                    heightDp = pillHeightDp
-                )
-            )
-            .addContent(spacerDp(sideDp, 1))
-            .build()
-    }
-    return buttonGroup(
-        width = expand(),
-        height = wrap()
-    ) {
-        row.forEach { item ->
-            buttonGroupItem {
-                periodDataCard(
-                    orderLabel = gridOrderLabel(item),
-                    subjectShort = parseSubject(item.subject).take(4),
-                    isCurrent = item.stableKey == currentKey,
-                    heightDp = pillHeightDp
-                )
-            }
-        }
-    }
 }
 
 private fun mergeTileItems(items: List<ScheduleItem>): List<ScheduleItem> {
