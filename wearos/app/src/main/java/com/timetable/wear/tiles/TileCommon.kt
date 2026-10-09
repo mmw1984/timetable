@@ -46,13 +46,14 @@ internal fun MaterialScope.periodDataCard(
     orderLabel: String,
     subjectShort: String,
     isCurrent: Boolean,
-    width: ContainerDimension = expand()
+    width: ContainerDimension = expand(),
+    heightDp: Float = TILE_GRID_PILL_HEIGHT_DP
 ) = textButton(
     // 2-per-row grid: 3 short rows always fit vertically; textButton's
     // tight padding fits "1-2 MACO" where DataCard slots truncate it.
     onClick = openAppClickable(),
     width = width,
-    height = dp(TILE_GRID_PILL_HEIGHT_DP),
+    height = dp(heightDp),
     shape = shapes.full,
     colors = if (isCurrent) filledVariantButtonColors() else filledTonalButtonColors(),
     labelContent = {
@@ -103,14 +104,15 @@ private fun spacerDp(widthDp: Int, heightDp: Int): LayoutElementBuilders.LayoutE
 /** Pills shown per row in the 2-per-row grid (6 or fewer groups). */
 internal const val TILE_GRID_PILL_HEIGHT_DP = 48f
 
-/** Group count at which the tile switches to the compact single-column list. */
-internal const val TILE_COMPACT_LIST_THRESHOLD = 7
+/** Shorter grid pills when 3 rows are needed (5-6 groups) so small viewports fit. */
+internal const val TILE_GRID_PILL_HEIGHT_SHORT_DP = 40f
 
-/**
- * Compact rows (TILE_MAX_COMPACT_ROWS - 1 groups + one "+N 更多" overflow
- * pill). Tiles cannot scroll, so this budget must fit the smallest viewport.
- */
-internal const val TILE_MAX_COMPACT_ROWS = 5
+/** Estimated inter-row gap used for viewport budgeting. */
+internal const val TILE_ROW_GAP_DP = 8
+
+/** Viewport reserved for title slot + margins; the rest is the list budget. */
+internal const val TILE_CHROME_DP = 64
+
 internal const val TILE_COMPACT_ROW_HEIGHT_DP = 38f
 
 /** Side padding assumed when centering a lone orphan pill. */
@@ -120,14 +122,13 @@ internal fun MaterialScope.periodCardGroups(
     items: List<ScheduleItem>,
     currentKey: String?,
     merge: Boolean,
-    screenWidthDp: Int
+    screenWidthDp: Int,
+    screenHeightDp: Int
 ): LayoutElementBuilders.LayoutElement {
-    // Layout depends on the group count because tiles cannot scroll:
-    // anything taller than the viewport is clipped. 7+ groups switch to a
-    // compact list with an overflow entry; a lone orphan row is centered
-    // instead of stretched full width (that looked broken).
-    // (Supersedes the old take(MAX_TILE_ROWS) cap: with 8 periods max it
-    // never triggered, and it dropped content without an entry point.)
+    // Layout depends on the group count AND the viewport height because tiles
+    // cannot scroll: anything taller than the viewport is clipped top and
+    // bottom (seen on small round screens as cut-off bubbles). Small screens
+    // get shorter pills and fewer compact rows instead of clipped content.
     val groups = tileGroups(items, merge)
     if (groups.isEmpty()) {
         return m3Text(
@@ -135,23 +136,44 @@ internal fun MaterialScope.periodCardGroups(
             typography = Typography.TITLE_SMALL
         )
     }
-    if (groups.size >= TILE_COMPACT_LIST_THRESHOLD) {
-        val visible = groups.take(TILE_MAX_COMPACT_ROWS - 1)
-        val overflow = groups.size - visible.size
-        return Column.Builder()
-            .setWidth(expand())
-            .setHeight(wrap())
-            .apply {
-                visible.forEach { item ->
-                    addContent(compactRowCard(compactRowLabel(item), item.stableKey == currentKey))
-                }
-                if (overflow > 0) {
-                    addContent(compactRowCard("＋${overflow} 更多", false))
-                }
-            }
-            .build()
+    val budget = (screenHeightDp - TILE_CHROME_DP).coerceAtLeast(96)
+    val gridRows = (groups.size + 1) / 2
+    val gridPillH = if (gridRows <= 2) TILE_GRID_PILL_HEIGHT_DP else TILE_GRID_PILL_HEIGHT_SHORT_DP
+    val gridH = (gridRows * (gridPillH + TILE_ROW_GAP_DP)).toInt()
+    if (groups.size <= 6 && gridH <= budget) {
+        return gridGroups(groups, currentKey, screenWidthDp, gridPillH)
     }
-    // 6 or fewer groups: 2-per-row grid.
+    // Compact single-column list sized to the budget; always leaves room
+    // for the "+N 更多" overflow pill so content is never silently clipped.
+    val maxRows = compactRowBudget(screenHeightDp)
+    val visible = if (groups.size <= maxRows) groups else groups.take((maxRows - 1).coerceAtLeast(1))
+    val overflow = groups.size - visible.size
+    return Column.Builder()
+        .setWidth(expand())
+        .setHeight(wrap())
+        .apply {
+            visible.forEach { item ->
+                addContent(compactRowCard(compactRowLabel(item), item.stableKey == currentKey))
+            }
+            if (overflow > 0) {
+                addContent(compactRowCard("＋${overflow} 更多", false))
+            }
+        }
+        .build()
+}
+
+/** How many compact rows (including the overflow pill) fit the height budget. Pure logic, unit-tested. */
+internal fun compactRowBudget(screenHeightDp: Int): Int {
+    val budget = (screenHeightDp - TILE_CHROME_DP).coerceAtLeast(96)
+    return (budget / (TILE_COMPACT_ROW_HEIGHT_DP + TILE_ROW_GAP_DP)).toInt().coerceAtLeast(2)
+}
+
+private fun MaterialScope.gridGroups(
+    groups: List<ScheduleItem>,
+    currentKey: String?,
+    screenWidthDp: Int,
+    pillHeightDp: Float
+): LayoutElementBuilders.LayoutElement {
     val halfWidthDp = ((screenWidthDp - TILE_GRID_SIDE_PADDING_DP) / 2).coerceAtLeast(72)
     val sideDp = (halfWidthDp / 2).coerceAtLeast(8)
     return Column.Builder()
@@ -162,19 +184,20 @@ internal fun MaterialScope.periodCardGroups(
                 if (row.size == 1) {
                     val item = row[0]
                     addContent(
-                        // NOTE: explicit 48dp height — a wrap() Row mis-measures
+                        // NOTE: explicit row height — a wrap() Row mis-measures
                         // fixed-height buttons and the pill overflows into
                         // neighbouring rows (seen on-watch as overlap).
                         LayoutElementBuilders.Row.Builder()
                             .setWidth(expand())
-                            .setHeight(dp(TILE_GRID_PILL_HEIGHT_DP))
+                            .setHeight(dp(pillHeightDp))
                             .addContent(spacerDp(sideDp, 1))
                             .addContent(
                                 periodDataCard(
                                     orderLabel = gridOrderLabel(item),
                                     subjectShort = parseSubject(item.subject).take(4),
                                     isCurrent = item.stableKey == currentKey,
-                                    width = dp(halfWidthDp.toFloat())
+                                    width = dp(halfWidthDp.toFloat()),
+                                    heightDp = pillHeightDp
                                 )
                             )
                             .addContent(spacerDp(sideDp, 1))
@@ -191,7 +214,8 @@ internal fun MaterialScope.periodCardGroups(
                                     periodDataCard(
                                         orderLabel = gridOrderLabel(item),
                                         subjectShort = parseSubject(item.subject).take(4),
-                                        isCurrent = item.stableKey == currentKey
+                                        isCurrent = item.stableKey == currentKey,
+                                        heightDp = pillHeightDp
                                     )
                                 }
                             }
