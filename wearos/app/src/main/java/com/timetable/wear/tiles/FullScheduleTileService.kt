@@ -13,6 +13,7 @@ import androidx.wear.tiles.RequestBuilders.TileRequest
 import androidx.wear.tiles.TileBuilders.Tile
 import androidx.wear.tiles.TileService
 import com.google.common.util.concurrent.ListenableFuture
+import com.timetable.wear.data.local.UiPreferences
 import com.timetable.wear.data.model.TimetableType
 import com.timetable.wear.engine.TimetableEngine
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,21 +21,24 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 
 @AndroidEntryPoint
 class FullScheduleTileService : TileService() {
 
     @Inject lateinit var engine: TimetableEngine
+    @Inject lateinit var uiPreferences: UiPreferences
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onTileRequest(requestParams: TileRequest): ListenableFuture<Tile> =
         serviceScope.future {
             val snapshot = engine.getTileSnapshot() ?: engine.getTodaySnapshot()
+            val merge = uiPreferences.mergeConsecutive.first()
             val layout = if (snapshot == null) {
                 loadingLayout(requestParams)
             } else {
-                fullLayout(snapshot, requestParams)
+                fullLayout(snapshot, requestParams, merge)
             }
             buildTile(layout, freshnessMillis = 300_000L)
         }
@@ -61,7 +65,7 @@ class FullScheduleTileService : TileService() {
             )
         }
 
-    private fun fullLayout(snapshot: com.timetable.wear.engine.TodaySnapshot, requestParams: TileRequest): LayoutElement =
+    private fun fullLayout(snapshot: com.timetable.wear.engine.TodaySnapshot, requestParams: TileRequest, merge: Boolean): LayoutElement =
         materialScope(this, requestParams.deviceConfiguration) {
             val isNextDay = snapshot.isNextDay
             if (!isNextDay && (snapshot.timetableType == TimetableType.NONE || snapshot.dayCycle == null)) {
@@ -92,12 +96,13 @@ class FullScheduleTileService : TileService() {
                 else -> ""
             }
             val dayLabel = snapshot.dayCycle?.let { "Day$it" } ?: ""
+            val groupCount = tileGroups(snapshot.scheduleItems, merge).size
             val headerTitle = if (isNextDay) {
                 // Include the date so "下次上課" is unambiguous on weekends/holidays.
                 val datePart = snapshot.dateDisplay.ifBlank { dayLabel }
-                "下次上課·$datePart·$dayLabel·$typeShort".trim('·')
+                "下次上課·$datePart·$dayLabel·$typeShort·${groupCount}組".trim('·')
             } else {
-                "完整課表·$dayLabel·$typeShort".trim('·')
+                "完整課表·$dayLabel·$typeShort·${groupCount}組".trim('·')
             }
 
             // Next-day preview is in the future: never highlight a row as "current".
@@ -114,7 +119,12 @@ class FullScheduleTileService : TileService() {
                     text(headerTitle.layoutString, typography = Typography.TITLE_SMALL)
                 },
                 mainSlot = {
-                    periodCardGroups(snapshot.scheduleItems, currentKey)
+                    periodCardGroups(
+                        snapshot.scheduleItems,
+                        currentKey,
+                        merge,
+                        requestParams.deviceConfiguration.screenWidthDp
+                    )
                 }
             )
         }
