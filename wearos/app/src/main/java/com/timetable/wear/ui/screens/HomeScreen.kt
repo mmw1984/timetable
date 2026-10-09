@@ -229,6 +229,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .transformedHeight(this, transformationSpec)
                         .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                        .padding(vertical = 3.dp)
                     if (useDense) {
                         if (isBreak) {
                             DenseBreakRow(
@@ -666,7 +667,7 @@ private fun ScheduleItemCard(
                             text = item.subject,
                             style = denseBodySmall(),
                             maxLines = 1,
-                            overflow = TextOverflow.Clip
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -922,7 +923,7 @@ private fun DenseScheduleRow(
                     text = item.subject,
                     style = denseBodySmall(),
                     maxLines = 1,
-                    overflow = TextOverflow.Clip
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
