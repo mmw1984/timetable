@@ -27,8 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.timetable.wear.data.local.resolveDenseLayout
 import com.timetable.wear.ui.theme.SubjectColors
 import com.timetable.wear.ui.theme.denseBodySmall
 import com.timetable.wear.ui.theme.denseLabelSmall
@@ -69,6 +71,12 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val scheduleState by viewModel.scheduleState.collectAsStateWithLifecycle()
+    val denseMode by viewModel.denseMode.collectAsStateWithLifecycle()
+    val mergeConsecutive by viewModel.mergeConsecutive.collectAsStateWithLifecycle()
+    val configuration = LocalConfiguration.current
+    val useDense = remember(denseMode, configuration.smallestScreenWidthDp, configuration.screenHeightDp) {
+        resolveDenseLayout(denseMode, configuration.smallestScreenWidthDp, configuration.screenHeightDp)
+    }
     val columnState = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
 
@@ -78,8 +86,9 @@ fun HomeScreen(
     // baseline-profile generation covers the full startup journey.
     ReportDrawnWhen { !scheduleState.isLoading }
 
-    val mergedItems = remember(scheduleState.scheduleItems) {
-        mergeConsecutiveItems(scheduleState.scheduleItems)
+    val mergedItems = remember(scheduleState.scheduleItems, mergeConsecutive) {
+        if (mergeConsecutive) mergeConsecutiveItems(scheduleState.scheduleItems)
+        else scheduleState.scheduleItems
     }
 
     ScreenScaffold(
@@ -121,28 +130,42 @@ fun HomeScreen(
             } else {
                 // Only show current/next when viewing today; "課表預覽" is redundant for other days
                 if (scheduleState.isViewingToday) {
-                    item {
-                        CurrentClassCard(
-                            state = scheduleState,
-                            countdownFlow = viewModel.countdownState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .transformedHeight(this, transformationSpec)
-                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
-                            transformation = SurfaceTransformation(transformationSpec)
-                        )
-                    }
-
-                    scheduleState.nextPeriod?.let { nextPeriod ->
+                    if (useDense) {
                         item {
-                            NextClassCard(
-                                period = nextPeriod,
+                            DenseCurrentNextCard(
+                                state = scheduleState,
+                                countdownFlow = viewModel.countdownState,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
                                     .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
                                 transformation = SurfaceTransformation(transformationSpec)
                             )
+                        }
+                    } else {
+                        item {
+                            CurrentClassCard(
+                                state = scheduleState,
+                                countdownFlow = viewModel.countdownState,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
+                                transformation = SurfaceTransformation(transformationSpec)
+                            )
+                        }
+
+                        scheduleState.nextPeriod?.let { nextPeriod ->
+                            item {
+                                NextClassCard(
+                                    period = nextPeriod,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .transformedHeight(this, transformationSpec)
+                                        .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
+                                    transformation = SurfaceTransformation(transformationSpec)
+                                )
+                            }
                         }
                     }
                 }
@@ -180,24 +203,36 @@ fun HomeScreen(
                 items(mergedItems, key = { it.stableKey }) { item ->
                     val isCurrent = isCurrentMerged(item, scheduleState)
                     val isBreak = item.type == ScheduleItemType.BREAK_TIME || item.type == ScheduleItemType.ASSEMBLY
-                    if (isBreak) {
+                    val rowModifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                    if (useDense) {
+                        if (isBreak) {
+                            DenseBreakRow(
+                                item = item,
+                                isCurrent = isCurrent,
+                                modifier = rowModifier
+                            )
+                        } else {
+                            DenseScheduleRow(
+                                item = item,
+                                isCurrent = isCurrent,
+                                modifier = rowModifier
+                            )
+                        }
+                    } else if (isBreak) {
                         BreakItemCard(
                             item = item,
                             isCurrent = isCurrent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .transformedHeight(this, transformationSpec)
-                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
+                            modifier = rowModifier,
                             transformation = SurfaceTransformation(transformationSpec)
                         )
                     } else {
                         ScheduleItemCard(
                             item = item,
                             isCurrent = isCurrent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .transformedHeight(this, transformationSpec)
-                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
+                            modifier = rowModifier,
                             transformation = SurfaceTransformation(transformationSpec)
                         )
                     }
@@ -678,4 +713,162 @@ private fun isCurrentMerged(item: ScheduleItem, state: HomeScheduleState): Boole
     if (curStart < 0 || curEnd < 0 || itemStart < 0 || itemEnd < 0) return false
     // Current period fully inside merged item range
     return curStart >= itemStart && curEnd <= itemEnd
+}
+
+/**
+ * Dense layout variants (see Settings → 版面）. Old composables above are
+ * untouched so 設定 → 標準 restores the previous UI byte-for-byte.
+ */
+
+@Composable
+private fun DenseCurrentNextCard(
+    state: HomeScheduleState,
+    countdownFlow: StateFlow<CountdownState>,
+    modifier: Modifier,
+    transformation: SurfaceTransformation
+) {
+    val countdown by countdownFlow.collectAsStateWithLifecycle()
+    val isTimed = state.isViewingToday && countdown.countdownLabel.isNotEmpty()
+    val accent = when (state.currentPeriod.type) {
+        PeriodInfo.PeriodType.PERIOD -> SubjectColors.colorFor(state.currentPeriod.subject)
+        PeriodInfo.PeriodType.BREAK_TIME, PeriodInfo.PeriodType.ASSEMBLY -> SubjectColors.colorFor(state.currentPeriod.name)
+        else -> MaterialTheme.colorScheme.primary
+    }
+    val nextLabel = state.nextPeriod?.let { next ->
+        when (next.type) {
+            PeriodInfo.PeriodType.PERIOD -> "下堂 ${parseSubject(next.subject)} ${next.start}"
+            else -> "下堂 ${next.name} ${next.start}"
+        }
+    } ?: "已放學"
+    Card(modifier = modifier, transformation = transformation) {
+        Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = true), contentAlignment = Alignment.CenterStart) {
+            Column(verticalArrangement = Arrangement.Center) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(accent)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "目前 ${state.currentPeriod.name}",
+                        style = denseTitleSmall(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (isTimed) {
+                        Text(
+                            text = countdown.countdownShort,
+                            style = denseTitleSmall(),
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1
+                        )
+                    }
+                }
+                Text(
+                    text = "${state.currentPeriod.subject} · $nextLabel",
+                    style = denseBodySmall(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DenseScheduleRow(
+    item: ScheduleItem,
+    isCurrent: Boolean,
+    modifier: Modifier
+) {
+    val dotColor = when (item.type) {
+        ScheduleItemType.PERIOD -> SubjectColors.colorFor(item.subject)
+        else -> SubjectColors.colorFor(item.displayName)
+    }
+    Box(
+        modifier = modifier
+            .height(46.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+            .background(
+                if (isCurrent) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceContainer
+            )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = item.start,
+                modifier = Modifier.width(40.dp),
+                style = denseLabelSmall(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = item.displayName,
+                    style = denseLabelSmall(),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+                Text(
+                    text = item.subject,
+                    style = denseBodySmall(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DenseBreakRow(
+    item: ScheduleItem,
+    isCurrent: Boolean,
+    modifier: Modifier
+) {
+    val dotColor = SubjectColors.colorFor(item.displayName)
+    Box(
+        modifier = modifier
+            .height(28.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+            .background(
+                if (isCurrent) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceContainer
+            )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "${item.start}  ${item.displayName}",
+                style = denseLabelSmall(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Clip
+            )
+        }
+    }
 }
