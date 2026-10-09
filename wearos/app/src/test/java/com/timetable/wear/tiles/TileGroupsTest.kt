@@ -87,4 +87,25 @@ class TileGroupsTest {
         // unknown height falls back safely instead of clipping everything
         assertEquals(2, compactRowBudget(0))
     }
+
+    @Test
+    fun `tile plan covers 4 to 8 groups on a large viewport`() {
+        // 227dp screen: 4 groups -> 48dp grid, 5-6 groups -> 40dp grid
+        assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 227))
+        assertEquals(TileLayoutPlan(true, 40f, 5), planTileLayout(5, 227))
+        assertEquals(TileLayoutPlan(true, 40f, 6), planTileLayout(6, 227))
+        // 7-8 groups -> compact, budget fits 2 rows (visible + overflow share them)
+        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(7, 227))
+        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(8, 227))
+    }
+
+    @Test
+    fun `tile plan shrinks to compact on a small viewport`() {
+        // 192dp screen: 4 groups still grid, 5+ go compact with 1 visible + overflow
+        assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 192))
+        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(5, 192))
+        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(6, 192))
+        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(7, 192))
+        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(8, 192))
+    }
 }
