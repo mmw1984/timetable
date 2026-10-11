@@ -24,7 +24,8 @@ window.TIMETABLE_DATA = {
         // 小息和午餐时间
         breaks: [
             { start: "10:00", end: "10:20", name: "小息" },
-            { start: "11:40", end: "12:50", name: "午餐" },
+            { start: "11:40", end: "12:45", name: "午餐" },
+            { start: "12:45", end: "12:50", name: "點名" },
             { start: "14:10", end: "14:25", name: "小息" }
         ]
     },
