@@ -6,6 +6,9 @@ import android.content.Intent
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.wear.compose.material3.ColorScheme
+import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.compose.remote.creation.compose.action.pendingIntentAction
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteText
@@ -56,57 +59,27 @@ fun staticPalette(): WidgetPalette = WidgetPalette(
 )
 
 fun paletteFor(context: Context): WidgetPalette {
-    val night = (context.resources.configuration.uiMode and
-        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-        android.content.res.Configuration.UI_MODE_NIGHT_YES
-    fun sys(lightRes: Int, darkRes: Int, fallback: Long): Long {
-        val id = if (night) darkRes else lightRes
-        return try {
-            context.getColor(id).toLong() and 0xFFFFFFFFL
-        } catch (_: Exception) {
-            fallback
-        }
-    }
+    // Same source as the app theme (TimetableTheme): the system dynamic
+    // scheme when available, else the library default. Re-resolved on every
+    // widget update, so the 30s ticker follows watch-face theme changes.
+    val scheme = try {
+        dynamicColorScheme(context)
+    } catch (_: Exception) {
+        null
+    } ?: ColorScheme()
+    fun argb(color: Color): Long = color.toArgb().toLong() and 0xFFFFFFFFL
     return WidgetPalette(
-        leftBg = sys(
-            android.R.color.system_primary_container_light,
-            android.R.color.system_primary_container_dark,
-            W_COLOR_LEFT_BG
-        ),
-        leftText = sys(
-            android.R.color.system_on_primary_container_light,
-            android.R.color.system_on_primary_container_dark,
-            W_COLOR_LEFT_TEXT
-        ),
-        pillTopBg = sys(
-            android.R.color.system_surface_container_light,
-            android.R.color.system_surface_container_dark,
-            W_COLOR_PILL_TOP_BG
-        ),
-        pillTopText = sys(
-            android.R.color.system_on_surface_light,
-            android.R.color.system_on_surface_dark,
-            W_COLOR_PILL_TOP_TEXT
-        ),
-        pillBottomBg = sys(
-            android.R.color.system_primary_fixed_dim,
-            android.R.color.system_primary_fixed_dim,
-            W_COLOR_PILL_BOTTOM_BG
-        ),
-        pillBottomText = sys(
-            android.R.color.system_on_primary_light,
-            android.R.color.system_on_primary_dark,
-            W_COLOR_PILL_BOTTOM_TEXT
-        ),
-        onSurface = sys(
-            android.R.color.system_on_surface_light,
-            android.R.color.system_on_surface_dark,
-            W_COLOR_ON_SURFACE
-        )
+        leftBg = argb(scheme.primaryContainer),
+        leftText = argb(scheme.onPrimaryContainer),
+        pillTopBg = argb(scheme.surfaceContainer),
+        pillTopText = argb(scheme.onSurface),
+        pillBottomBg = argb(scheme.primaryDim),
+        pillBottomText = argb(scheme.onPrimary),
+        onSurface = argb(scheme.onSurface)
     ).also {
         android.util.Log.d(
             "WidgetPalette",
-            "night=$night leftBg=${it.leftBg.toString(16)} leftText=${it.leftText.toString(16)} " +
+            "leftBg=${it.leftBg.toString(16)} leftText=${it.leftText.toString(16)} " +
                 "top=${it.pillTopBg.toString(16)}/${it.pillTopText.toString(16)} " +
                 "bottom=${it.pillBottomBg.toString(16)}/${it.pillBottomText.toString(16)}"
         )

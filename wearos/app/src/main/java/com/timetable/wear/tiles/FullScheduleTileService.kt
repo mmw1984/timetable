@@ -171,7 +171,7 @@ class FullScheduleTileService : TileService() {
         return builder.build()
     }
 
-    /** Uniform kit pill: subject over range, fixed Figma colors. */
+    /** Uniform kit pill: subject over range, theme colors (M3E dynamic). */
     private fun MaterialScope.gridPill(
         line1: String,
         line2: String,
@@ -188,7 +188,7 @@ class FullScheduleTileService : TileService() {
                 ModifiersBuilders.Modifiers.Builder()
                     .setBackground(
                         ModifiersBuilders.Background.Builder()
-                            .setColor(colorOf(SCHEDULE_PILL_BG))
+                            .setColor(colorScheme.surfaceContainer.prop)
                             .setCorner(
                                 ModifiersBuilders.Corner.Builder()
                                     .setRadius(dp(200f))
@@ -231,14 +231,14 @@ class FullScheduleTileService : TileService() {
             .setHeight(expand())
             .build()
 
-    private fun pillLine(text: String, sizeSp: Float, weight: Int): LayoutElement =
+    private fun MaterialScope.pillLine(text: String, sizeSp: Float, weight: Int): LayoutElement =
         LayoutElementBuilders.Text.Builder()
             .setText(text)
             .setFontStyle(
                 LayoutElementBuilders.FontStyle.Builder()
                     .setSize(sp(sizeSp))
                     .setWeight(weight)
-                    .setColor(colorOf(SCHEDULE_PILL_TEXT))
+                    .setColor(colorScheme.onSurface.prop)
                     .build()
             )
             .setMaxLines(1)
@@ -277,13 +277,6 @@ class FullScheduleTileService : TileService() {
             resources(requestParams.version)
         )
 }
-
-private fun colorOf(argb: Long): ColorBuilders.ColorProp =
-    ColorBuilders.ColorProp.Builder().setArgb(argb.toInt()).build()
-
-/** Kit schedule pills (Figma page 21): uniform deep purple + light text. */
-private const val SCHEDULE_PILL_BG: Long = 0xFF4D3D76L
-private const val SCHEDULE_PILL_TEXT: Long = 0xFFF6EDFFL
 
 /** Fixed slot widths: 2x70 + 4 gap fills the safe row (round screens clip 74). */
 private const val SCHEDULE_SLOT_2_DP = 70f

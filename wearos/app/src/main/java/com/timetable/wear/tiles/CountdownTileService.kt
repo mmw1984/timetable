@@ -183,11 +183,19 @@ class CountdownTileService : TileService() {
                             .setWidth(dp(70f))
                             .setHeight(expand())
                             .addContent(
-                                tilePill(dayLabel, WIDGET_PILL_TOP_BG, WIDGET_PILL_TOP_TEXT)
+                                tilePill(
+                                    dayLabel,
+                                    colorScheme.surfaceContainer.prop,
+                                    colorScheme.onSurface.prop
+                                )
                             )
                             .addContent(spacerDp(1, TILE_COUNTDOWN_BOX_GAP_DP))
                             .addContent(
-                                tilePill(nextLabel, WIDGET_PILL_BOTTOM_BG, WIDGET_PILL_BOTTOM_TEXT)
+                                tilePill(
+                                    nextLabel,
+                                    colorScheme.tertiaryContainer.prop,
+                                    colorScheme.onTertiaryContainer.prop
+                                )
                             )
                             .build()
                     )
@@ -200,8 +208,13 @@ class CountdownTileService : TileService() {
      * Single-line stadium pill that fills its parent (day / next slots).
      * Explicit oversized radius: CircleShape-style clips render as ellipses
      * on non-square boxes, a huge rounded-rect radius is a true stadium.
+     * Theme colors (M3 Expressive dynamic, same source as the app).
      */
-    private fun MaterialScope.tilePill(label: String, bgArgb: Long, textArgb: Long): LayoutElement =
+    private fun MaterialScope.tilePill(
+        label: String,
+        bg: ColorBuilders.ColorProp,
+        fg: ColorBuilders.ColorProp
+    ): LayoutElement =
         LayoutElementBuilders.Box.Builder()
             .setWidth(expand())
             .setHeight(expand())
@@ -211,7 +224,7 @@ class CountdownTileService : TileService() {
                 ModifiersBuilders.Modifiers.Builder()
                     .setBackground(
                         ModifiersBuilders.Background.Builder()
-                            .setColor(colorOf(bgArgb))
+                            .setColor(bg)
                             .setCorner(
                                 ModifiersBuilders.Corner.Builder()
                                     .setRadius(dp(200f))
@@ -235,7 +248,7 @@ class CountdownTileService : TileService() {
                         LayoutElementBuilders.FontStyle.Builder()
                             .setSize(sp(15f))
                             .setWeight(LayoutElementBuilders.FONT_WEIGHT_MEDIUM)
-                            .setColor(colorOf(textArgb))
+                            .setColor(fg)
                             .build()
                     )
                     .setMaxLines(1)
@@ -260,12 +273,3 @@ class CountdownTileService : TileService() {
             resources(requestParams.version)
         )
 }
-
-private fun colorOf(argb: Long): ColorBuilders.ColorProp =
-    ColorBuilders.ColorProp.Builder().setArgb(argb.toInt()).build()
-
-/** Kit pill colors, shared with the Glance widgets (Figma pages 20/21). */
-private const val WIDGET_PILL_TOP_BG: Long = 0xFF332E3CL
-private const val WIDGET_PILL_TOP_TEXT: Long = 0xFFF5EEFBL
-private const val WIDGET_PILL_BOTTOM_BG: Long = 0xFF4D3D76L
-private const val WIDGET_PILL_BOTTOM_TEXT: Long = 0xFFF6EDFFL

@@ -157,14 +157,9 @@ internal const val TILE_COUNTDOWN_BOX_GAP_DP = 4
  * Left big box of the 一開三 countdown tile (Figma page 20: a tall light
  * stadium): fills the row height, class lines pinned to the top, countdown
  * centered in the remaining space via twin expand() spacers. Fully-rounded
- * (stadium) corners via an oversized radius.
- *
- * Fixed Figma colors (not theme roles): the kit box is always light
- * lavender with dark text, independent of the system dynamic theme.
+ * (stadium) corners via an oversized radius. Theme colors (M3 Expressive
+ * dynamic, same source as the app).
  */
-internal const val COUNTDOWN_BOX_BG: Long = 0xFFE9DDFFL
-internal const val COUNTDOWN_BOX_TEXT: Long = 0xFF210F48L
-
 internal fun MaterialScope.countdownBigBox(
     className: String,
     subjectLine: String,
@@ -179,7 +174,7 @@ internal fun MaterialScope.countdownBigBox(
             ModifiersBuilders.Modifiers.Builder()
                 .setBackground(
                     ModifiersBuilders.Background.Builder()
-                        .setColor(fixedColor(COUNTDOWN_BOX_BG))
+                        .setColor(colorScheme.primaryContainer.prop)
                         .setCorner(
                             ModifiersBuilders.Corner.Builder()
                                 .setRadius(dp(200f))
@@ -206,7 +201,7 @@ internal fun MaterialScope.countdownBigBox(
                 .apply {
                     if (className.isNotBlank()) {
                         addContent(
-                            fixedLine(
+                            countdownLine(
                                 className,
                                 sizeSp = 12f,
                                 weight = LayoutElementBuilders.FONT_WEIGHT_MEDIUM
@@ -215,7 +210,7 @@ internal fun MaterialScope.countdownBigBox(
                     }
                     if (subjectLine.isNotBlank()) {
                         addContent(
-                            fixedLine(
+                            countdownLine(
                                 subjectLine,
                                 sizeSp = 11f,
                                 weight = LayoutElementBuilders.FONT_WEIGHT_MEDIUM
@@ -229,8 +224,10 @@ internal fun MaterialScope.countdownBigBox(
                             .build()
                     )
                     addContent(
-                        fixedLine(
+                        countdownLine(
                             countdownText,
+                            // Length-tiered so 6-char timers (186:45) fit the
+                            // 70dp box instead of ellipsizing.
                             sizeSp = if (countdownText.length > 5) 18f else 34f,
                             weight = LayoutElementBuilders.FONT_WEIGHT_BOLD
                         )
@@ -246,12 +243,14 @@ internal fun MaterialScope.countdownBigBox(
         )
         .build()
 
-/** Single centered line in a fixed Figma color (kit boxes ignore the theme). */
-private fun fixedLine(
+/**
+ * Single centered line in the box's theme color (M3 Expressive dynamic,
+ * same source as the app): explicit size keeps long timers fitting.
+ */
+private fun MaterialScope.countdownLine(
     text: String,
     sizeSp: Float,
-    weight: Int,
-    color: Long = COUNTDOWN_BOX_TEXT
+    weight: Int
 ): LayoutElementBuilders.LayoutElement =
     LayoutElementBuilders.Text.Builder()
         .setText(text)
@@ -259,15 +258,12 @@ private fun fixedLine(
             LayoutElementBuilders.FontStyle.Builder()
                 .setSize(sp(sizeSp))
                 .setWeight(weight)
-                .setColor(fixedColor(color))
+                .setColor(colorScheme.onPrimaryContainer.prop)
                 .build()
         )
         .setMaxLines(1)
         .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
         .build()
-
-private fun fixedColor(argb: Long): ColorBuilders.ColorProp =
-    ColorBuilders.ColorProp.Builder().setArgb(argb.toInt()).build()
 
 /** Single-column compact row for 7+ groups, e.g. "1-2 MACO". */
 internal fun MaterialScope.compactRowCard(
