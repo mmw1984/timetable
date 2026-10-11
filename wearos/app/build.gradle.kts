@@ -27,10 +27,13 @@ android {
             // Stable release signing: CI decodes the keystore from the
             // ANDROID_KEYSTORE_BASE64 secret (see .github/workflows). Local builds
             // without the env vars fall back to the debug key for ADB installs.
+            // NOTE: resolve against the repo root (wearos/), not the app dir:
+            // the CI decode step writes release.keystore next to settings.gradle.
             val keystorePath = System.getenv("RELEASE_KEYSTORE_FILE") ?: "release.keystore"
-            if (file(keystorePath).exists()) {
+            val keystoreFile = rootProject.file(keystorePath)
+            if (keystoreFile.exists()) {
                 signingConfigs.create("release") {
-                    storeFile = file(keystorePath)
+                    storeFile = keystoreFile
                     storePassword = System.getenv("RELEASE_STORE_PASSWORD")
                     keyAlias = System.getenv("RELEASE_KEY_ALIAS")
                     keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
