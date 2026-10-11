@@ -3,12 +3,11 @@ package com.timetable.wear.ui.screens
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.wear.tiles.TileService
 import com.timetable.wear.data.local.DenseLayoutMode
 import com.timetable.wear.data.local.UiPreferences
 import com.timetable.wear.data.repository.TimetableRepository
 import com.timetable.wear.engine.TimetableEngine
-import com.timetable.wear.tiles.FullScheduleTileService
+import com.timetable.wear.widgets.ScheduleWidget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,9 +84,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun requestScheduleTileUpdate() {
-        // tiles 1.6.x: TileService.requestUpdate() was replaced by getUpdater().
+        // Widgets update through Glance, not TileService.
         runCatching {
-            TileService.getUpdater(appContext).requestUpdate(FullScheduleTileService::class.java)
+            viewModelScope.launch { ScheduleWidget().triggerUpdateAll(appContext) }
         }
     }
 }

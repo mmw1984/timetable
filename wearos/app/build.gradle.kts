@@ -89,6 +89,13 @@ dependencies {
     implementation(libs.wear.tiles)
     implementation("androidx.wear.protolayout:protolayout-material3:1.4.2")
 
+    // Wear Widgets (Glance + Remote Compose)
+    implementation(libs.glance.wear)
+    implementation(libs.glance.wear.core)
+    implementation(libs.remote.creation.compose)
+    implementation(libs.remote.core)
+    implementation(libs.remote.material3)
+
     // Lifecycle
     implementation(libs.lifecycle.runtime)
     implementation(libs.lifecycle.runtime.compose)

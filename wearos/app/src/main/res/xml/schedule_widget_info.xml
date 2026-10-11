@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wearwidget-provider
+    description="@string/tile_full_schedule"
+    icon="@mipmap/ic_launcher"
+    label="@string/tile_full_schedule"
+    preferredType="LARGE">
+
+    <container
+        type="LARGE"
+        previewImage="@mipmap/ic_launcher" />
+    <container
+        type="SMALL"
+        previewImage="@mipmap/ic_launcher" />
+</wearwidget-provider>

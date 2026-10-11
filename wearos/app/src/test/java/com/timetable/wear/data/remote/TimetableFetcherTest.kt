@@ -26,6 +26,26 @@ class TimetableFetcherTest {
     }
 
     @Test
+    fun `parses roll call break after lunch`() {
+        val result = TimetableFetcher().parseTimetable(
+            """
+            | Period | Day 1 | Day 2 |
+            | **11:40 - 12:45** | **Lunch** |
+            | **12:45 - 12:50** | **Roll Call** |
+            | **12:50 - 13:30** | MATH 101 | ENG 102 |
+            """.trimIndent()
+        )
+
+        val breaks = result.normalSchedule?.breaks.orEmpty()
+        assertEquals(2, breaks.size)
+        assertEquals("午餐", breaks[0].name)
+        assertEquals("12:45", breaks[0].end)
+        assertEquals("點名", breaks[1].name)
+        assertEquals("12:45", breaks[1].start)
+        assertEquals("12:50", breaks[1].end)
+    }
+
+    @Test
     fun `parses special timetable ranges and skips weekend dates`() {
         val result = TimetableFetcher().parseSpecialDates(
             """

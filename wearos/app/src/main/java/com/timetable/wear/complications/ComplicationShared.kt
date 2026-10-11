@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import com.timetable.wear.data.model.PeriodInfo
+import com.timetable.wear.data.model.ScheduleItem
+import com.timetable.wear.data.model.ScheduleItemType
 import java.util.Locale
 
 fun parseSubject(subject: String): String {
@@ -33,6 +35,15 @@ fun formatCountdown(seconds: Int): String {
     } else {
         String.format(Locale.US, "%02d:%02d", minutes, secs)
     }
+}
+
+/**
+ * Kit countdown style ("67:34"): total minutes, zero-padded, no hour field.
+ * A merged 80-minute block reads "80:00" and always fits the 74dp slot.
+ */
+fun formatCountdownMinutes(seconds: Int): String {
+    val safe = seconds.coerceAtLeast(0)
+    return String.format(Locale.US, "%02d:%02d", safe / 60, safe % 60)
 }
 
 fun getBatteryLevel(context: Context): Int {
@@ -179,3 +190,56 @@ fun getBatteryIconRes(context: Context, level: Int): Int {
 }
 
 private fun Char.isCjk(): Boolean = code in 0x4E00..0x9FFF
+
+/**
+ * Contiguous same-subject 連堂 block containing the current period, for
+ * merged countdown/display. Returns null when merging is off, the current
+ * period is not a class, or it stands alone.
+ *
+ * Same rule as the tile grid / home list merging: PERIOD type only, exact
+ * same non-blank subject, contiguous end == start, never assembly.
+ */
+data class MergedBlock(val displayName: String, val start: String, val end: String)
+
+fun mergedPeriodBlock(
+    items: List<ScheduleItem>,
+    current: PeriodInfo,
+    merge: Boolean
+): MergedBlock? {
+    if (!merge) return null
+    if (current.type != PeriodInfo.PeriodType.PERIOD) return null
+    val subject = current.subject.trim()
+    if (subject.isEmpty() || current.start.isBlank() || current.end.isBlank()) return null
+    val periods = items.filter { it.type == ScheduleItemType.PERIOD }
+    if (periods.isEmpty()) return null
+    val index = periods.indexOfFirst { it.start == current.start && it.end == current.end }
+        .takeIf { it >= 0 }
+        ?: periods.indexOfFirst {
+            it.subject == current.subject &&
+                it.start.isNotBlank() && it.end.isNotBlank() &&
+                it.start <= current.start && current.end <= it.end
+        }.takeIf { it >= 0 } ?: return null
+    var first = index
+    while (first > 0) {
+        val prev = periods[first - 1]
+        val cur = periods[first]
+        if (prev.subject.trim() != subject || prev.end != cur.start) break
+        first--
+    }
+    var last = index
+    while (last < periods.size - 1) {
+        val cur = periods[last]
+        val next = periods[last + 1]
+        if (next.subject.trim() != subject || cur.end != next.start) break
+        last++
+    }
+    if (first == last) return null
+    val head = periods[first]
+    val tail = periods[last]
+    val name = if (head.periodNumber != null && tail.periodNumber != null) {
+        "第${head.periodNumber}-${tail.periodNumber}節"
+    } else {
+        head.displayName
+    }
+    return MergedBlock(displayName = name, start = head.start, end = tail.end)
+}

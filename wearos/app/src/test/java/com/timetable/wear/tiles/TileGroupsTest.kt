@@ -79,33 +79,79 @@ class TileGroupsTest {
     }
 
     @Test
-    fun `compact budget leaves room for the overflow pill`() {
-        // small round ~192dp screen: 2 rows (1 group + "+N 更多")
-        assertEquals(2, compactRowBudget(192))
-        // large round ~227dp screen: 3 rows
-        assertEquals(3, compactRowBudget(227))
-        // unknown height falls back safely instead of clipping everything
-        assertEquals(2, compactRowBudget(0))
+    fun `tile plan shows every group on a large round screen`() {
+        // 227dp screen: 4 groups -> 2 rows, 5 -> 2 rows (2+3), 6 -> 3 rows,
+        // 7 -> 3 rows (2+2+3), 8 -> 4 rows
+        assertEquals(2, planTileLayout(4, 227).rows)
+        assertEquals(2, planTileLayout(5, 227).rows)
+        assertEquals(3, planTileLayout(6, 227).rows)
+        assertEquals(3, planTileLayout(7, 227).rows)
+        assertEquals(4, planTileLayout(8, 227).rows)
     }
 
     @Test
-    fun `tile plan covers 4 to 8 groups on a large viewport`() {
-        // 227dp screen: 4 groups -> 48dp grid, 5-6 groups -> 40dp grid
-        assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 227))
-        assertEquals(TileLayoutPlan(true, 40f, 5), planTileLayout(5, 227))
-        assertEquals(TileLayoutPlan(true, 40f, 6), planTileLayout(6, 227))
-        // 7-8 groups -> compact, budget fits 2 rows (visible + overflow share them)
-        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(7, 227))
-        assertEquals(TileLayoutPlan(false, 38f, 2), planTileLayout(8, 227))
+    fun `row split packs a three-slot last row like the kit`() {
+        assertEquals(listOf(2, 2), tileRowSplit(4))
+        assertEquals(listOf(2, 3), tileRowSplit(5))
+        assertEquals(listOf(2, 2, 2), tileRowSplit(6))
+        assertEquals(listOf(2, 2, 3), tileRowSplit(7))
+        assertEquals(listOf(2, 2, 2, 2), tileRowSplit(8))
+        assertEquals(listOf(3), tileRowSplit(3))
+        assertEquals(listOf(2, 2, 2, 3), tileRowSplit(9))
+        assertEquals(listOf(1), tileRowSplit(1))
+        assertEquals(listOf(2), tileRowSplit(2))
     }
 
     @Test
-    fun `tile plan shrinks to compact on a small viewport`() {
-        // 192dp screen: 4 groups still grid, 5+ go compact with 1 visible + overflow
-        assertEquals(TileLayoutPlan(true, 48f, 4), planTileLayout(4, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(5, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(6, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(7, 192))
-        assertEquals(TileLayoutPlan(false, 38f, 1), planTileLayout(8, 192))
+    fun `every group count fits the viewport budget without clipping`() {
+        for (height in listOf(192, 227, 300, 450)) {
+            for (count in 1..8) {
+                val plan = planTileLayout(count, height)
+                val budget = (height - TILE_CHROME_DP).coerceAtLeast(80)
+                assertTrue(
+                    "count=$count height=$height planned=${plan.plannedHeightDp} budget=$budget",
+                    plan.plannedHeightDp <= budget
+                )
+                assertTrue(plan.pillHeightDp >= TILE_PILL_MIN_HEIGHT_DP)
+                assertTrue(plan.pillHeightDp <= TILE_PILL_MAX_HEIGHT_DP)
+            }
+        }
+    }
+
+    @Test
+    fun `four rows use a tighter gap on small screens`() {
+        assertEquals(TILE_ROW_GAP_COMPACT_DP, planTileLayout(8, 192).rowGapDp)
+        assertEquals(TILE_ROW_GAP_TIGHT_DP, planTileLayout(6, 227).rowGapDp)
+        assertEquals(TILE_ROW_GAP_DP, planTileLayout(5, 227).rowGapDp)
+        assertEquals(TILE_ROW_GAP_DP, planTileLayout(4, 227).rowGapDp)
+    }
+
+    @Test
+    fun `planned leaves slack below the budget edge`() {
+        for (height in listOf(192, 227, 300, 450)) {
+            for (count in 4..8) {
+                val plan = planTileLayout(count, height)
+                val budget = (height - TILE_CHROME_DP).coerceAtLeast(80)
+                assertTrue(
+                    "count=$count height=$height planned=${plan.plannedHeightDp} budget=$budget",
+                    plan.plannedHeightDp <= budget - 2
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `eight groups on a small round screen still show all of them`() {
+        val plan = planTileLayout(8, 192)
+        assertEquals(4, plan.rows)
+        assertTrue("pill=${plan.pillHeightDp}", plan.pillHeightDp >= TILE_PILL_MIN_HEIGHT_DP)
+        assertTrue(plan.plannedHeightDp <= (192 - TILE_CHROME_DP).coerceAtLeast(80))
+    }
+
+    @Test
+    fun `short month-day compresses the title date`() {
+        assertEquals("12/10", shortMonthDay("10月12日 星期一"))
+        assertEquals("3/9", shortMonthDay("9月3日 星期四"))
+        assertEquals("", shortMonthDay(""))
     }
 }

@@ -91,6 +91,12 @@ fun HomeScreen(
         if (mergeConsecutive) mergeConsecutiveItems(scheduleState.scheduleItems)
         else scheduleState.scheduleItems
     }
+    // Merged 連堂 display name for the current card ("第1-2節"); falls back
+    // to the single period name when nothing is merged.
+    val mergedCurrentName = remember(mergedItems, scheduleState) {
+        mergedItems.firstOrNull { isCurrentMerged(it, scheduleState) }?.displayName
+            ?: scheduleState.currentPeriod.name
+    }
 
     ScreenScaffold(
         scrollState = columnState,
@@ -147,6 +153,7 @@ fun HomeScreen(
                         item {
                             DenseCurrentNextCard(
                                 state = scheduleState,
+                                currentName = mergedCurrentName,
                                 countdownFlow = viewModel.countdownState,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -158,6 +165,7 @@ fun HomeScreen(
                         item {
                             CurrentClassCard(
                                 state = scheduleState,
+                                currentName = mergedCurrentName,
                                 countdownFlow = viewModel.countdownState,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -369,6 +377,7 @@ private fun LoadingCard(modifier: Modifier, transformation: SurfaceTransformatio
 @Composable
 private fun CurrentClassCard(
     state: HomeScheduleState,
+    currentName: String,
     countdownFlow: StateFlow<CountdownState>,
     modifier: Modifier,
     transformation: SurfaceTransformation
@@ -401,7 +410,7 @@ private fun CurrentClassCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = state.currentPeriod.name,
+                        text = currentName,
                         style = denseTitleSmall(),
                         maxLines = 1,
                         overflow = TextOverflow.Clip
@@ -437,11 +446,12 @@ private fun CountdownSlot(
 
 @Composable
 private fun CountdownInfo(countdown: CountdownState, nextPeriod: PeriodInfo?) {
-    // No rings, no countdown label: big MM:SS + what the next class is
+    // No rings, no countdown label: big MM:SS + what the next class is.
+    // "下堂" is for classes only: breaks/lunch/assembly show their own name.
     val nextLabel = nextPeriod?.let { next ->
         when (next.type) {
             PeriodInfo.PeriodType.PERIOD -> "下堂 ${parseSubject(next.subject)}"
-            else -> "下堂 ${next.name}"
+            else -> next.name.ifBlank { "休息" }
         }
     } ?: "已放學"
     Column(
@@ -481,7 +491,8 @@ private fun NextClassCard(period: PeriodInfo, modifier: Modifier, transformation
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "下一堂",
+                        // "下一堂" is for classes only: breaks show name/start below.
+                        if (period.type == PeriodInfo.PeriodType.PERIOD) "下一堂" else "接下來",
                         style = denseLabelSmall(),
                         color = MaterialTheme.colorScheme.tertiary
                     )
@@ -650,6 +661,7 @@ private fun ScheduleItemCard(
                         maxLines = 1,
                         overflow = TextOverflow.Clip
                     )
+                    Spacer(Modifier.width(8.dp))
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.Center
@@ -747,6 +759,7 @@ private fun isCurrentMerged(item: ScheduleItem, state: HomeScheduleState): Boole
 @Composable
 private fun DenseCurrentNextCard(
     state: HomeScheduleState,
+    currentName: String,
     countdownFlow: StateFlow<CountdownState>,
     modifier: Modifier
 ) {
@@ -781,7 +794,7 @@ private fun DenseCurrentNextCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "目前 ${state.currentPeriod.name}",
+                        text = "目前 $currentName",
                         style = denseTitleSmall(),
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
@@ -908,6 +921,7 @@ private fun DenseScheduleRow(
                 maxLines = 1,
                 overflow = TextOverflow.Clip
             )
+            Spacer(Modifier.width(8.dp))
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center

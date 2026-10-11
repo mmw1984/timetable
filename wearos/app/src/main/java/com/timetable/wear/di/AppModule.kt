@@ -66,7 +66,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTimetableEngine(repository: TimetableRepository): TimetableEngine {
-        return TimetableEngine(repository)
+    fun provideTimetableEngine(
+        repository: TimetableRepository,
+        uiPreferences: UiPreferences
+    ): TimetableEngine {
+        return TimetableEngine(repository, uiPreferences)
     }
 }

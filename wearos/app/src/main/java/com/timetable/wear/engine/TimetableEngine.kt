@@ -1,5 +1,7 @@
 package com.timetable.wear.engine
 
+import com.timetable.wear.complications.mergedPeriodBlock
+import com.timetable.wear.data.local.UiPreferences
 import com.timetable.wear.data.model.PeriodInfo
 import com.timetable.wear.data.model.ScheduleItem
 import com.timetable.wear.data.model.ScheduleItemType
@@ -66,7 +68,8 @@ data class TodaySnapshot(
 
 @Singleton
 class TimetableEngine @Inject constructor(
-    private val repository: TimetableRepository
+    private val repository: TimetableRepository,
+    uiPreferences: UiPreferences
 ) {
     private val _scheduleState = MutableStateFlow(HomeScheduleState())
     val scheduleState: StateFlow<HomeScheduleState> = _scheduleState.asStateFlow()
@@ -87,6 +90,17 @@ class TimetableEngine @Inject constructor(
     private var cachedSlotsSubjects: Map<Int, Map<Int, String>>? = null
     private var cachedSlots: List<TimelineSlot> = emptyList()
     private var cachedItems: List<ScheduleItem> = emptyList()
+
+    // Whether same-subject 連堂 count as one block for countdown/display.
+    // Mirrors Settings → 連堂合併 (default on); tiles read the same key.
+    @Volatile
+    private var mergeEnabled = true
+
+    init {
+        scope.launch {
+            uiPreferences.mergeConsecutive.collect { mergeEnabled = it }
+        }
+    }
 
     private val displayFormatter = DateTimeFormatter.ofPattern("M月d日 EEEE", Locale.TAIWAN)
 
@@ -249,7 +263,7 @@ class TimetableEngine @Inject constructor(
                 canNavigateNext = dates.any { it > date },
                 isLoading = false
             )
-            updateCountdown(now, current)
+            updateCountdown(now, current, items)
         }
     }
 
@@ -293,8 +307,16 @@ class TimetableEngine @Inject constructor(
             val subjects = repository.data.value.subjectSchedule
             val slots = slotsFor(schedule, state.dayCycle, subjects)
             val current = currentPeriodAt(now, slots)
-            val next = nextPeriodAt(now, slots)
+            val immediateNext = nextPeriodAt(now, slots)
             val currentItemId = findCurrentItemId(now, state.scheduleItems)
+            // Same-subject 連堂 counts as one block: countdown runs to the
+            // block end and "next" skips to the first class after the block.
+            val block = mergedPeriodBlock(state.scheduleItems, current, mergeEnabled)
+            val next = if (block != null) {
+                runCatching { nextPeriodAt(LocalTime.parse(block.end), slots) }.getOrNull()
+            } else {
+                immediateNext
+            }
 
             if (
                 current != state.currentPeriod ||
@@ -305,17 +327,23 @@ class TimetableEngine @Inject constructor(
                     it.copy(currentPeriod = current, nextPeriod = next, currentItemId = currentItemId)
                 }
             }
-            updateCountdown(now, current)
+            updateCountdown(now, current, state.scheduleItems)
         }
     }
 
-    private fun updateCountdown(now: LocalTime, period: PeriodInfo) {
+    private fun updateCountdown(now: LocalTime, period: PeriodInfo, items: List<ScheduleItem>) {
         if (period.type !in TIMED_PERIOD_TYPES || period.end.isBlank()) {
             _countdownState.value = CountdownState()
             return
         }
-        val remaining = TimetableLogic.secondsRemaining(now, period.end)
-        val total = period.totalSeconds.coerceAtLeast(1)
+        val block = mergedPeriodBlock(items, period, mergeEnabled)
+        val end = block?.end ?: period.end
+        val remaining = TimetableLogic.secondsRemaining(now, end)
+        val total = if (block != null && block.start.isNotBlank()) {
+            (TimetableLogic.timeToSeconds(end) - TimetableLogic.timeToSeconds(block.start)).coerceAtLeast(1)
+        } else {
+            period.totalSeconds.coerceAtLeast(1)
+        }
         _countdownState.value = CountdownState(
             countdown = formatCountdown(remaining),
             countdownShort = formatCountdownShort(remaining),

@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -66,10 +68,11 @@
                 android:value="@string/complication_all_in_one" />
         </service>
 
-        <!-- Tiles -->
+        <!-- Countdown tile: full-canvas ProtoLayout (tiles carousel) -->
         <service
             android:name=".tiles.CountdownTileService"
             android:label="@string/tile_countdown"
+            android:icon="@drawable/ic_launcher_foreground"
             android:exported="true"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
@@ -77,14 +80,55 @@
             </intent-filter>
         </service>
 
+        <!-- Countdown Glance widget (watch-face widget slots) -->
+        <service
+            android:name=".widgets.CountdownWidgetService"
+            android:label="@string/tile_countdown"
+            android:icon="@mipmap/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.glance.wear.action.BIND_WIDGET_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.glance.wear.widget.provider"
+                android:resource="@xml/countdown_widget_info" />
+        </service>
+
+        <!-- Schedule tile: full-canvas ProtoLayout (tiles carousel) -->
         <service
             android:name=".tiles.FullScheduleTileService"
             android:label="@string/tile_full_schedule"
+            android:icon="@mipmap/ic_launcher"
             android:exported="true"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
                 <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
             </intent-filter>
+        </service>
+
+        <!-- Schedule Glance widget (watch-face widget slots) -->
+        <service
+            android:name=".widgets.ScheduleWidgetService"
+            android:label="@string/tile_full_schedule"
+            android:icon="@mipmap/ic_launcher"
+            android:exported="true"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.glance.wear.action.BIND_WIDGET_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.glance.wear.widget.provider"
+                android:resource="@xml/schedule_widget_info" />
+        </service>
+
+        <service
+            android:name=".widgets.WidgetTickService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS"
+                android:value="push timetable widget updates every 30 seconds" />
         </service>
 
     </application>
