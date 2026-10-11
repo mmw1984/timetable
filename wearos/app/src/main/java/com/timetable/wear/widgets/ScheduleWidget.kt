@@ -24,6 +24,8 @@ import androidx.compose.remote.creation.compose.state.rs
 import androidx.compose.remote.creation.compose.state.rsp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetBrush
 import androidx.glance.wear.color
@@ -46,7 +48,9 @@ data class SlotModel(
     val line2SizeSp: Int,
     val isCurrent: Boolean,
     val widthDp: Float,
-    val heightDp: Float
+    val heightDp: Float,
+    val bgArgb: Long,
+    val textArgb: Long
 )
 
 data class ScheduleModel(
@@ -73,12 +77,13 @@ class ScheduleWidget : GlanceWearWidget() {
         val engine = entry.engine()
         val prefs = entry.uiPreferences()
         val snapshot = engine.getTileSnapshot() ?: engine.getTodaySnapshot()
+        val palette = paletteFor(context)
         val model = snapshot?.let {
-            buildModel(it, prefs.mergeConsecutive.first(), params)
+            buildModel(it, prefs.mergeConsecutive.first(), params, palette)
         }
         return WearWidgetDocument(background = WearWidgetBrush.color(Color(0xFF000000).rc)) {
             if (model == null) {
-                WidgetCenterText("載入中…", 14, W_COLOR_ON_SURFACE)
+                WidgetCenterText("載入中…", 14, palette.onSurface)
             } else {
                 ScheduleContent(model)
             }
@@ -93,7 +98,8 @@ class ScheduleWidget : GlanceWearWidget() {
     private fun buildModel(
         snapshot: com.timetable.wear.engine.TodaySnapshot,
         merge: Boolean,
-        params: WearWidgetParams
+        params: WearWidgetParams,
+        palette: WidgetPalette
     ): ScheduleModel {
         val dayLabel = snapshot.dayCycle?.let { "Day $it" } ?: ""
         val datePart = shortMonthDay(snapshot.dateDisplay)
@@ -131,7 +137,7 @@ class ScheduleWidget : GlanceWearWidget() {
             index += slots
             val gaps = gap * (row.size - 1).coerceAtLeast(0)
             val slotWidth = ((contentW - gaps) / row.size).coerceAtLeast(30f)
-            row.map { slotModel(it, it.stableKey == currentKey, slotWidth, pillH) }
+            row.map { slotModel(it, it.stableKey == currentKey, slotWidth, pillH, palette) }
         }
         return ScheduleModel(title, 12, rows, gap, contentW)
     }
@@ -140,19 +146,22 @@ class ScheduleWidget : GlanceWearWidget() {
         item: ScheduleItem,
         isCurrent: Boolean,
         widthDp: Float,
-        heightDp: Float
+        heightDp: Float,
+        palette: WidgetPalette
     ): SlotModel {
         val order = item.displayName.replace("第", "").replace("節", "").ifBlank {
             item.periodNumber?.toString().orEmpty()
         }
         val subject = parseSubject(item.subject).take(4)
+        val bg = if (isCurrent) palette.pillBottomBg else palette.pillTopBg
+        val fg = if (isCurrent) palette.pillBottomText else palette.pillTopText
         // Current is a two-line card when there is room, else a highlighted pill.
         return if (isCurrent && heightDp >= 30f && widthDp >= 55f) {
-            SlotModel(subject, order, 14, 10, true, widthDp, heightDp)
+            SlotModel(subject, order, 14, 10, true, widthDp, heightDp, bg, fg)
         } else if (widthDp >= 48f) {
-            SlotModel("$order $subject", "", 11, 10, isCurrent, widthDp, heightDp)
+            SlotModel("$order $subject", "", 11, 10, isCurrent, widthDp, heightDp, bg, fg)
         } else {
-            SlotModel(subject, "", 10, 10, isCurrent, widthDp, heightDp)
+            SlotModel(subject, "", 10, 10, isCurrent, widthDp, heightDp, bg, fg)
         }
     }
 }
@@ -192,27 +201,31 @@ fun ScheduleContent(m: ScheduleModel) {
 @RemoteComposable
 @Composable
 fun ScheduleSlot(s: SlotModel) {
-    val bg = if (s.isCurrent) W_COLOR_PILL_BOTTOM_BG else W_COLOR_PILL_TOP_BG
-    val fg = if (s.isCurrent) W_COLOR_PILL_BOTTOM_TEXT else W_COLOR_PILL_TOP_TEXT
     RemoteBox(
         modifier = RemoteModifier.width(s.widthDp.rdp).height(s.heightDp.rdp)
             .clip(if (s.line2.isNotBlank()) RemoteRoundedCornerShape(26.rdp) else RemoteCircleShape)
-            .background(Color(bg).rc),
+            .background(Color(s.bgArgb).rc),
         contentAlignment = RemoteAlignment.Center
     ) {
         RemoteColumn(modifier = RemoteModifier.fillMaxWidth(), horizontalAlignment = RemoteAlignment.CenterHorizontally) {
             RemoteText(
                 text = s.line1.rs,
                 modifier = RemoteModifier.width((s.widthDp - 8f).rdp),
-                color = Color(fg).rc,
-                fontSize = s.line1SizeSp.rsp
+                color = Color(s.textArgb).rc,
+                fontSize = s.line1SizeSp.rsp,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             if (s.line2.isNotBlank()) {
                 RemoteText(
                     text = s.line2.rs,
                     modifier = RemoteModifier.width((s.widthDp - 8f).rdp),
-                    color = Color(fg).rc,
-                    fontSize = s.line2SizeSp.rsp
+                    color = Color(s.textArgb).rc,
+                    fontSize = s.line2SizeSp.rsp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

@@ -69,7 +69,9 @@ data class CountdownModel(
     val leftHeightDp: Float = 55f,
     val pillHeightDp: Float = 26f,
     /** Half of the shorter side: clips a true stadium (CircleShape renders an ellipse). */
-    val leftRadiusDp: Float = 27f
+    val leftRadiusDp: Float = 27f,
+    /** M3 Expressive dynamic colors resolved on-device per update. */
+    val palette: WidgetPalette = staticPalette()
 )
 
 class CountdownWidget : GlanceWearWidget() {
@@ -88,10 +90,11 @@ class CountdownWidget : GlanceWearWidget() {
         val engine = entry.engine()
         val prefs = entry.uiPreferences()
         val snapshot = engine.getTileSnapshot() ?: engine.getTodaySnapshot()
-        val model = snapshot?.let { buildModel(it, prefs.mergeConsecutive.first(), params) }
+        val palette = paletteFor(context)
+        val model = snapshot?.let { buildModel(it, prefs.mergeConsecutive.first(), params, palette) }
         return WearWidgetDocument(background = WearWidgetBrush.color(Color(0xFF000000).rc)) {
             if (model == null) {
-                WidgetCenterText("載入中…", 14, W_COLOR_ON_SURFACE)
+                WidgetCenterText("載入中…", 14, palette.onSurface)
             } else {
                 CountdownContent(model)
             }
@@ -106,7 +109,8 @@ class CountdownWidget : GlanceWearWidget() {
     private fun buildModel(
         snapshot: com.timetable.wear.engine.TodaySnapshot,
         merge: Boolean,
-        params: WearWidgetParams
+        params: WearWidgetParams,
+        palette: WidgetPalette
     ): CountdownModel {
         // Geometry from the real container (debug FULLSCREEN on 192dp is only
         // ~121x73dp of content, far smaller than the 192dp kit canvas).
@@ -138,7 +142,8 @@ class CountdownWidget : GlanceWearWidget() {
             rightWidthDp = rightW,
             leftHeightDp = rowH,
             pillHeightDp = pillH,
-            leftRadiusDp = minOf(leftW, rowH) / 2
+            leftRadiusDp = minOf(leftW, rowH) / 2,
+            palette = palette
         )
         if (snapshot.isNextDay) {
             val day = snapshot.dayCycle?.let { "Day $it" } ?: snapshot.dateDisplay
@@ -235,7 +240,7 @@ fun CountdownContent(m: CountdownModel) {
                 RemoteBox(
                     modifier = RemoteModifier.width(m.leftWidthDp.rdp).height(m.leftHeightDp.rdp)
                         .clip(RemoteRoundedCornerShape(m.leftRadiusDp.rdp))
-                        .background(Color(W_COLOR_LEFT_BG).rc),
+                        .background(Color(m.palette.leftBg).rc),
                     contentAlignment = RemoteAlignment.Center
                 ) {
                     RemoteColumn(
@@ -245,7 +250,7 @@ fun CountdownContent(m: CountdownModel) {
                         RemoteText(
                             text = m.countdown.rs,
                             modifier = RemoteModifier.width((m.leftWidthDp - 10f).rdp),
-                            color = Color(W_COLOR_LEFT_TEXT).rc,
+                            color = Color(m.palette.leftText).rc,
                             fontSize = m.countdownSizeSp.rsp,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
@@ -255,7 +260,7 @@ fun CountdownContent(m: CountdownModel) {
                         RemoteText(
                             text = m.subjectLine.rs,
                             modifier = RemoteModifier.width((m.leftWidthDp - 10f).rdp),
-                            color = Color(W_COLOR_LEFT_TEXT).rc,
+                            color = Color(m.palette.leftText).rc,
                             fontSize = m.subjectSizeSp.rsp,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
@@ -266,9 +271,9 @@ fun CountdownContent(m: CountdownModel) {
                 RemoteBox(modifier = RemoteModifier.width(m.rowGapDp.rdp).fillMaxHeight()) {}
                 // Right stacked pills (true stadiums via half-height radius).
                 RemoteColumn(modifier = RemoteModifier.width(m.rightWidthDp.rdp)) {
-                    WidgetPill(m.dayLabel, m.pillSizeSp, W_COLOR_PILL_TOP_BG, W_COLOR_PILL_TOP_TEXT, m.rightWidthDp, m.pillHeightDp, m.pillHeightDp / 2)
+                    WidgetPill(m.dayLabel, m.pillSizeSp, m.palette.pillTopBg, m.palette.pillTopText, m.rightWidthDp, m.pillHeightDp, m.pillHeightDp / 2)
                     RemoteBox(modifier = RemoteModifier.height(m.rowGapDp.rdp).fillMaxWidth()) {}
-                    WidgetPill(m.nextLabel, m.pillSizeSp, W_COLOR_PILL_BOTTOM_BG, W_COLOR_PILL_BOTTOM_TEXT, m.rightWidthDp, m.pillHeightDp, m.pillHeightDp / 2)
+                    WidgetPill(m.nextLabel, m.pillSizeSp, m.palette.pillBottomBg, m.palette.pillBottomText, m.rightWidthDp, m.pillHeightDp, m.pillHeightDp / 2)
                 }
             }
         }
