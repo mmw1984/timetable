@@ -8,7 +8,8 @@ CCC Heep Woh College 2026-2027 Class 5E Timetable
 | **10:00 - 10:20** | **Recess** |
 | **10:20 - 11:00** | M2 YPC 401 | CHIN NKT 401 | ICT WKC 316 | CEP LWF 401 | ENG KKY 401 | ICT WKC 316 |
 | **11:00 - 11:40** | M2 YPC 401 | CHIN NKT 401 | ENG KKY 401 | CHIN NKT 401 | ENG KKY 401 | ICT WKC 316 |
-| **11:40 - 12:50** | **Lunch** |
+| **11:40 - 12:45** | **Lunch** |
+| **12:45 - 12:50** | **Roll Call** |
 | **12:50 - 13:30** | PE LD,WLS G001 | MACO YPC 401 | PHY WKW 511 | PHY WKW 511 | CS LPY 401 | C&L SDF 401 |
 | **13:30 - 14:10** | PE LD,WLS G001 | MACO YPC 401 | PHY WKW 511 | ENG KKY 401 | CS LPY 401 | ENG KKY 401 |
 | **14:10 - 14:25** | **Recess** |
