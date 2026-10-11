@@ -134,7 +134,13 @@ class CountdownWidget : GlanceWearWidget() {
             title = title,
             subjectLine = subjectLine,
             countdown = countdown,
-            countdownSizeSp = if (countdown.length > 5) 13 else 18,
+            // Length-tiered to the ~49dp inner width (digits ~0.55em).
+            countdownSizeSp = when {
+                countdown.length >= 6 -> 13
+                countdown.length == 5 -> 15
+                countdown.length == 4 -> 17
+                else -> 19
+            },
             dayLabel = dayLabel,
             nextLabel = nextLabel,
             rowGapDp = gap,

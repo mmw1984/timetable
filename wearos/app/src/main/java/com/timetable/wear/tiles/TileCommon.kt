@@ -226,9 +226,15 @@ internal fun MaterialScope.countdownBigBox(
                     addContent(
                         countdownLine(
                             countdownText,
-                            // Length-tiered so 6-char timers (186:45) fit the
-                            // 70dp box instead of ellipsizing.
-                            sizeSp = if (countdownText.length > 5) 18f else 34f,
+                            // Length-tiered to the 70dp box inner width (~62dp):
+                            // digits run ~0.55em, so 4-5 char timers need far
+                            // less than the 34sp that fits nothing here.
+                            sizeSp = when {
+                                countdownText.length >= 6 -> 17f
+                                countdownText.length == 5 -> 19f
+                                countdownText.length == 4 -> 23f
+                                else -> 27f
+                            },
                             weight = LayoutElementBuilders.FONT_WEIGHT_BOLD
                         )
                     )
