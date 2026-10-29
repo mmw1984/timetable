@@ -186,12 +186,12 @@ window.SUBJECT_SCHEDULE = {
         4: "ENG KKY 401",
         5: "PHY WKW 511",
         6: "PHY WKW 511",
-        7: "MACO YPC 401",
-        8: "MACO YPC 401"
+        7: "M2 YPC 401",
+        8: "M2 YPC 401"
     },
     4: {
-        1: "M2 YPC 401",
-        2: "M2 YPC 401",
+        1: "MACO YPC 401",
+        2: "MACO YPC 401",
         3: "CEP LWF 401",
         4: "CHIN NKT 401",
         5: "PHY WKW 511",
