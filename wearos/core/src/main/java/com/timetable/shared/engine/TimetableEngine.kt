@@ -313,7 +313,12 @@ class TimetableEngine @Inject constructor(
             // block end and "next" skips to the first class after the block.
             val block = mergedPeriodBlock(state.scheduleItems, current, mergeEnabled)
             val next = if (block != null) {
-                runCatching { nextPeriodAt(LocalTime.parse(block.end), slots) }.getOrNull()
+                // nextPeriodAt requires start > now, so a slot beginning exactly
+                // at the block's end (e.g. lunch right after a double) would be
+                // skipped — look up from one second earlier.
+                runCatching {
+                    nextPeriodAt(LocalTime.parse(block.end).minusSeconds(1), slots)
+                }.getOrNull()
             } else {
                 immediateNext
             }
