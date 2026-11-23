@@ -1,0 +1,27 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# Android SDK + JDK 17 are already on the VM (ANDROID_HOME=~/android-sdk).
+initialize:
+  - name: install Wear OS 5.1 system image
+    run: yes | ~/android-sdk/cmdline-tools/latest/bin/sdkmanager "system-images;android-35-ext15;android-wear;x86_64" > /dev/null
+  - name: create tablet AVD
+    run: echo no | ~/android-sdk/cmdline-tools/latest/bin/avdmanager create avd -n timetable_tablet -k "system-images;android-35;google_apis;x86_64" -d pixel_tablet --force
+  - name: create wear AVD
+    run: echo no | ~/android-sdk/cmdline-tools/latest/bin/avdmanager create avd -n timetable_wear -k "system-images;android-35-ext15;android-wear;x86_64" -d wearos_large_round --force
+knowledge:
+  - name: build
+    contents: |
+      # cd wearos && ./gradlew :core:assembleDebug :app:assembleDebug :phone:assembleDebug
+      # releases: ./gradlew :app:assembleRelease :phone:assembleRelease
+  - name: test
+    contents: |
+      # cd wearos && ./gradlew :core:test :app:testDebugUnitTest :phone:testDebugUnitTest
+  - name: emulator
+    contents: |
+      # export PATH=~/android-sdk/platform-tools:~/android-sdk/emulator:$PATH
+      # AVDs: hk_transit (pixel_6 phone), timetable_tablet, timetable_wear
+      # emulator -avd <name> -no-window -gpu swiftshader_indirect -no-snapshot-load &
+      # devices: phone emulator-5554, tablet emulator-5556, wear emulator-5558
+  - name: notes
+    contents: |
+      # settings.gradle.kts prefers the GCS Maven Central mirror —
+      # repo.maven.apache.org frequently returns 429 on this VM.
