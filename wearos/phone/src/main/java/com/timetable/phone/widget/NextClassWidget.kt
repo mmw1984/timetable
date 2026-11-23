@@ -114,9 +114,13 @@ class NextClassWidget : GlanceAppWidget() {
                     if (current.start.isNotBlank() && current.end.isNotBlank()) {
                         append("  ${current.start}–${current.end}")
                     }
-                    val remaining = remainingSecondsFor(current.end)
-                    if (remaining > 0 && current.end.isNotBlank()) {
-                        append(" · 尚餘 ${formatMinutes(remaining)}")
+                    // On a next-day preview the slot belongs to a future date:
+                    // a same-day countdown would be meaningless, so omit it.
+                    if (!snapshot.isNextDay) {
+                        val remaining = remainingSecondsFor(current.end)
+                        if (remaining > 0 && current.end.isNotBlank()) {
+                            append(" · 尚餘 ${formatMinutes(remaining)}")
+                        }
                     }
                 }
                 Text(
