@@ -162,6 +162,7 @@ private fun DayTabsGrid(
 ) {
     var selectedDay by rememberSaveable { mutableIntStateOf(1) }
 
+    Column(Modifier.fillMaxSize()) {
     SecondaryTabRow(selectedTabIndex = selectedDay - 1) {
         for (day in 1..6) {
             Tab(
@@ -220,6 +221,7 @@ private fun DayTabsGrid(
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
+    }
     }
 }
 
