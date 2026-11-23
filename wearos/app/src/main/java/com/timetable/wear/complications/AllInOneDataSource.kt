@@ -9,12 +9,19 @@ import androidx.wear.watchface.complications.data.NoDataComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import com.timetable.wear.MainActivity
-import com.timetable.wear.data.model.PeriodInfo
-import com.timetable.wear.engine.TodaySnapshot
-import com.timetable.wear.engine.TimetableEngine
+import com.timetable.shared.data.model.PeriodInfo
+import com.timetable.shared.engine.TodaySnapshot
+import com.timetable.shared.engine.TimetableEngine
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.timetable.shared.util.parseSubject
+import com.timetable.shared.util.formatMinutes
+import com.timetable.shared.util.formatMmSs
+import com.timetable.shared.util.isActiveTimedPeriod
+import com.timetable.shared.util.remainingSecondsFor
+import com.timetable.shared.util.elapsedSecondsFor
+import com.timetable.shared.util.isSchoolHours
 
 @AndroidEntryPoint
 class AllInOneDataSource : AsyncComplicationDataSource() {
@@ -29,8 +36,8 @@ class AllInOneDataSource : AsyncComplicationDataSource() {
         requestScope.launch {
             val snapshot = engine.getTodaySnapshot()
             val now = java.time.LocalTime.now()
-            val isSchoolDay = snapshot != null && snapshot.timetableType != com.timetable.wear.data.model.TimetableType.NONE && snapshot.dayCycle != null
-            val lastEnd = snapshot?.scheduleItems?.filter { it.type == com.timetable.wear.data.model.ScheduleItemType.PERIOD }?.maxOfOrNull { it.end } ?: ""
+            val isSchoolDay = snapshot != null && snapshot.timetableType != com.timetable.shared.data.model.TimetableType.NONE && snapshot.dayCycle != null
+            val lastEnd = snapshot?.scheduleItems?.filter { it.type == com.timetable.shared.data.model.ScheduleItemType.PERIOD }?.maxOfOrNull { it.end } ?: ""
             val inSchoolHours = isSchoolDay && isSchoolHours(now, lastEnd)
             val battery = getBatteryLevel(applicationContext)
             val text = if (!isSchoolDay || !inSchoolHours) {

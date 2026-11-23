@@ -4,47 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
-import com.timetable.wear.data.model.PeriodInfo
-import com.timetable.wear.data.model.ScheduleItem
-import com.timetable.wear.data.model.ScheduleItemType
-import java.util.Locale
-
-fun parseSubject(subject: String): String {
-    val trimmed = subject.trim()
-    if (trimmed.isEmpty()) return trimmed
-    // First whitespace-separated token without Regex allocs (called on every tile/complication update).
-    var end = trimmed.length
-    for (i in trimmed.indices) {
-        val c = trimmed[i]
-        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
-            end = i
-            break
-        }
-    }
-    val firstWord = if (end == trimmed.length) trimmed else trimmed.substring(0, end)
-    return if (firstWord.any { it.isCjk() }) trimmed else firstWord
-}
-
-fun formatCountdown(seconds: Int): String {
-    val safe = seconds.coerceAtLeast(0)
-    val hours = safe / 3600
-    val minutes = (safe % 3600) / 60
-    val secs = safe % 60
-    return if (hours > 0) {
-        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, secs)
-    } else {
-        String.format(Locale.US, "%02d:%02d", minutes, secs)
-    }
-}
-
-/**
- * Kit countdown style ("67:34"): total minutes, zero-padded, no hour field.
- * A merged 80-minute block reads "80:00" and always fits the 74dp slot.
- */
-fun formatCountdownMinutes(seconds: Int): String {
-    val safe = seconds.coerceAtLeast(0)
-    return String.format(Locale.US, "%02d:%02d", safe / 60, safe % 60)
-}
 
 fun getBatteryLevel(context: Context): Int {
     val snapshot = batterySnapshot(context)
@@ -53,69 +12,6 @@ fun getBatteryLevel(context: Context): Int {
 }
 
 fun formatBatteryText(level: Int): String = if (level < 0) "—" else "$level%"
-
-fun isActiveTimedPeriod(period: PeriodInfo): Boolean = period.type in ACTIVE_TIMED_TYPES
-
-private val ACTIVE_TIMED_TYPES = setOf(
-    PeriodInfo.PeriodType.PERIOD,
-    PeriodInfo.PeriodType.BREAK_TIME,
-    PeriodInfo.PeriodType.ASSEMBLY
-)
-
-/** Memoized "HH:mm" -> seconds; distinct clock times in a timetable are few. */
-private val timeSecondsCache = java.util.concurrent.ConcurrentHashMap<String, Int>()
-
-private fun timeToSecondsCached(value: String): Int {
-    timeSecondsCache[value]?.let { return it }
-    val parts = value.split(":")
-    if (parts.size < 2) return 0
-    val seconds = (parts[0].toIntOrNull() ?: 0) * 3600 + (parts[1].toIntOrNull() ?: 0) * 60
-    if (timeSecondsCache.size < 256) timeSecondsCache[value] = seconds
-    return seconds
-}
-
-private fun nowSeconds(): Int {
-    val now = java.time.LocalTime.now()
-    return now.hour * 3600 + now.minute * 60 + now.second
-}
-
-fun remainingSecondsFor(end: String): Int {
-    return timeToSecondsCached(end) - nowSeconds()
-}
-
-fun secondsUntil(start: String): Int {
-    return timeToSecondsCached(start) - nowSeconds()
-}
-
-fun elapsedSecondsFor(start: String): Int {
-    return nowSeconds() - timeToSecondsCached(start)
-}
-
-fun formatMinutes(remainingSec: Int): String {
-    val mins = (remainingSec.coerceAtLeast(0) + 59) / 60
-    return if (mins <= 0) "0m" else "${mins}m"
-}
-
-fun formatMmSs(remainingSec: Int): String {
-    val safe = remainingSec.coerceAtLeast(0)
-    val mins = safe / 60
-    val secs = safe % 60
-    return String.format(Locale.US, "%02d:%02d", mins, secs)
-}
-
-fun formatMmSsAod(remainingSec: Int): String {
-    val safe = remainingSec.coerceAtLeast(0)
-    val mins = safe / 60
-    return String.format(Locale.US, "%02d:--", mins)
-}
-
-fun isSchoolHours(now: java.time.LocalTime, lastEnd: String): Boolean {
-    val lastSec = timeToSecondsCached(lastEnd) + 15 * 60
-    if (lastSec == 15 * 60) return false
-    val nowSec = now.hour * 3600 + now.minute * 60 + now.second
-    val startSec = 7 * 3600 + 30 * 60
-    return nowSec in startSec..lastSec
-}
 
 /**
  * Battery state is read via a sticky broadcast; cache it briefly so the
@@ -187,59 +83,4 @@ fun getBatteryIconRes(context: Context, level: Int): Int {
         5 -> com.timetable.wear.R.drawable.ic_battery_5
         else -> com.timetable.wear.R.drawable.ic_battery_6
     }
-}
-
-private fun Char.isCjk(): Boolean = code in 0x4E00..0x9FFF
-
-/**
- * Contiguous same-subject 連堂 block containing the current period, for
- * merged countdown/display. Returns null when merging is off, the current
- * period is not a class, or it stands alone.
- *
- * Same rule as the tile grid / home list merging: PERIOD type only, exact
- * same non-blank subject, contiguous end == start, never assembly.
- */
-data class MergedBlock(val displayName: String, val start: String, val end: String)
-
-fun mergedPeriodBlock(
-    items: List<ScheduleItem>,
-    current: PeriodInfo,
-    merge: Boolean
-): MergedBlock? {
-    if (!merge) return null
-    if (current.type != PeriodInfo.PeriodType.PERIOD) return null
-    val subject = current.subject.trim()
-    if (subject.isEmpty() || current.start.isBlank() || current.end.isBlank()) return null
-    val periods = items.filter { it.type == ScheduleItemType.PERIOD }
-    if (periods.isEmpty()) return null
-    val index = periods.indexOfFirst { it.start == current.start && it.end == current.end }
-        .takeIf { it >= 0 }
-        ?: periods.indexOfFirst {
-            it.subject == current.subject &&
-                it.start.isNotBlank() && it.end.isNotBlank() &&
-                it.start <= current.start && current.end <= it.end
-        }.takeIf { it >= 0 } ?: return null
-    var first = index
-    while (first > 0) {
-        val prev = periods[first - 1]
-        val cur = periods[first]
-        if (prev.subject.trim() != subject || prev.end != cur.start) break
-        first--
-    }
-    var last = index
-    while (last < periods.size - 1) {
-        val cur = periods[last]
-        val next = periods[last + 1]
-        if (next.subject.trim() != subject || cur.end != next.start) break
-        last++
-    }
-    if (first == last) return null
-    val head = periods[first]
-    val tail = periods[last]
-    val name = if (head.periodNumber != null && tail.periodNumber != null) {
-        "第${head.periodNumber}-${tail.periodNumber}節"
-    } else {
-        head.displayName
-    }
-    return MergedBlock(displayName = name, start = head.start, end = tail.end)
 }

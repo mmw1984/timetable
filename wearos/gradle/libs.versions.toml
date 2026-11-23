@@ -59,12 +59,17 @@ uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", versi
 test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "test-ext-junit" }
 glance-wear = { group = "androidx.glance.wear", name = "wear", version.ref = "glance-wear" }
 glance-wear-core = { group = "androidx.glance.wear", name = "wear-core", version.ref = "glance-wear" }
+glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version = "1.2.0" }
+glance-material3 = { group = "androidx.glance", name = "glance-material3", version = "1.2.0" }
+adaptive-navigation-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite", version = "1.4.0" }
+material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 remote-creation-compose = { group = "androidx.compose.remote", name = "remote-creation-compose", version.ref = "remote-compose" }
 remote-core = { group = "androidx.compose.remote", name = "remote-core", version.ref = "remote-compose" }
 remote-material3 = { group = "androidx.wear.compose.remote", name = "remote-material3", version.ref = "remote-material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

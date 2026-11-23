@@ -1,9 +1,9 @@
 package com.timetable.wear.tiles
 
-import com.timetable.wear.data.local.DenseLayoutMode
-import com.timetable.wear.data.local.resolveDenseLayout
-import com.timetable.wear.data.model.ScheduleItem
-import com.timetable.wear.data.model.ScheduleItemType
+import com.timetable.shared.data.local.DenseLayoutMode
+import com.timetable.shared.data.local.resolveDenseLayout
+import com.timetable.shared.data.model.ScheduleItem
+import com.timetable.shared.data.model.ScheduleItemType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
