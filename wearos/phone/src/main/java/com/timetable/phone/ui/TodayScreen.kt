@@ -71,6 +71,9 @@ fun TodayScreen(
         if (mergeConsecutive) mergeConsecutiveItems(scheduleState.scheduleItems)
         else scheduleState.scheduleItems
     }
+    // The merged block currently on, if any — its time range matches the
+    // countdown, which runs to the block end rather than the single period's.
+    val currentDisplayItem = displayItems.firstOrNull { isCurrentMerged(it, scheduleState) }
 
     Column(modifier = modifier) {
         TopAppBar(
@@ -125,7 +128,7 @@ fun TodayScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 DayMetaChips(scheduleState)
-                                CurrentPeriodCard(scheduleState, countdown.countdown, countdown.countdownLabel, countdown.countdownProgress)
+                                CurrentPeriodCard(scheduleState, countdown.countdown, countdown.countdownLabel, countdown.countdownProgress, currentDisplayItem)
                                 NextPeriodCard(scheduleState.nextPeriod)
                             }
                             Spacer(Modifier.width(16.dp))
@@ -147,7 +150,8 @@ fun TodayScreen(
                                     scheduleState,
                                     countdown.countdown,
                                     countdown.countdownLabel,
-                                    countdown.countdownProgress
+                                    countdown.countdownProgress,
+                                    currentDisplayItem
                                 )
                             }
                             item { NextPeriodCard(scheduleState.nextPeriod) }
@@ -187,7 +191,8 @@ private fun CurrentPeriodCard(
     state: HomeScheduleState,
     countdown: String,
     countdownLabel: String,
-    countdownProgress: Float
+    countdownProgress: Float,
+    currentItem: ScheduleItem? = null
 ) {
     val current = state.currentPeriod
     Card(
@@ -208,9 +213,11 @@ private fun CurrentPeriodCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
-            if (current.start.isNotBlank() && current.end.isNotBlank()) {
+            val rangeStart = currentItem?.start?.ifBlank { null } ?: current.start
+            val rangeEnd = currentItem?.end?.ifBlank { null } ?: current.end
+            if (rangeStart.isNotBlank() && rangeEnd.isNotBlank()) {
                 Text(
-                    text = "${current.start} – ${current.end}",
+                    text = "$rangeStart – $rangeEnd",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
