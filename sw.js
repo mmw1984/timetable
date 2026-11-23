@@ -1,5 +1,5 @@
 // Service Worker for Timetable PWA
-const CACHE_NAME = 'timetable-v2';
+const CACHE_NAME = 'timetable-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -44,31 +44,26 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - cache-first for instant launch (esp. iOS Home Screen web apps).
-// Navigations are served from cache without a background revalidation request,
-// so a cold start never pays for two network hits. Static assets still
-// revalidate in the background for next launch.
+// Cached responses (navigations included) still revalidate in the background,
+// so the next launch picks up deployed updates instead of serving a stale
+// app shell forever — the extra request never blocks this response.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
-  const isNavigation = event.request.mode === 'navigate';
 
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return response immediately
+        // Cache hit - return response immediately, revalidate in background
         if (response) {
-          // Background revalidate for non-navigation assets only
-          if (!isNavigation) {
-            fetch(event.request).then((freshResponse) => {
-              if (freshResponse && freshResponse.status === 200) {
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(event.request, freshResponse);
-                });
-              }
-            }).catch(() => {
-              // Network failed, but we have cached version
-            });
-          }
+          fetch(event.request).then((freshResponse) => {
+            if (freshResponse && freshResponse.status === 200) {
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, freshResponse);
+              });
+            }
+          }).catch(() => {
+            // Network failed, but we have cached version
+          });
 
           return response;
         }

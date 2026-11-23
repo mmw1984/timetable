@@ -1682,12 +1682,23 @@
             updateDateTime() {
                 const now = new Date();
                 this.lastUpdateTime = Date.now(); // Track last update for mobile timer monitoring
-                document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', { 
-                    month: 'long', day: 'numeric', weekday: 'long' 
-                });
-                document.getElementById('current-time').textContent = now.toLocaleTimeString('zh-HK', { 
-                    hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
+                // Cache DOM refs + Intl formatters once: this runs every second,
+                // and a fresh toLocaleString allocates a new formatter each call.
+                if (!this._dateFormatter) {
+                    this._dateFormatter = new Intl.DateTimeFormat('zh-HK', {
+                        month: 'long', day: 'numeric', weekday: 'long'
+                    });
+                    this._timeFormatter = new Intl.DateTimeFormat('zh-HK', {
+                        hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                    this._dateEl = document.getElementById('current-date');
+                    this._timeEl = document.getElementById('current-time');
+                }
+                const dateStr = this._dateFormatter.format(now);
+                const timeStr = this._timeFormatter.format(now);
+                // Skip DOM writes when nothing changed (avoids layout/paint churn)
+                if (this._dateEl && this._dateEl.textContent !== dateStr) this._dateEl.textContent = dateStr;
+                if (this._timeEl && this._timeEl.textContent !== timeStr) this._timeEl.textContent = timeStr;
             }
 
             updateTimetable() {
@@ -1937,10 +1948,19 @@
                 }
             }
 
+            _setText(el, text) {
+                if (el && el.textContent !== text) el.textContent = text;
+            }
+
             updateCountdown() {
+                if (!this._countdownEl) {
+                    this._countdownEl = document.getElementById('countdown-display');
+                    this._countdownLabelEl = document.getElementById('countdown-label');
+                }
+
                 if (!this.currentPeriodInfo || !this.currentPeriodInfo.end) {
-                    document.getElementById('countdown-display').textContent = '--:--:--';
-                    document.getElementById('countdown-label').textContent = '';
+                    this._setText(this._countdownEl, '--:--:--');
+                    this._setText(this._countdownLabelEl, '');
                     return;
                 }
 
@@ -1949,8 +1969,8 @@
                 const timeDiff = endTime - now;
 
                 if (timeDiff <= 0) {
-                    document.getElementById('countdown-display').textContent = '00:00:00';
-                    document.getElementById('countdown-label').textContent = '時間已到';
+                    this._setText(this._countdownEl, '00:00:00');
+                    this._setText(this._countdownLabelEl, '時間已到');
                     return;
                 }
 
@@ -1958,15 +1978,15 @@
                 const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-                document.getElementById('countdown-display').textContent = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                
+                this._setText(this._countdownEl,
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+
                 let label = '';
                 if (this.currentPeriodInfo.type === 'period') label = '下課倒計時';
                 else if (this.currentPeriodInfo.type === 'break') label = '小息結束倒計時';
                 else if (this.currentPeriodInfo.type === 'assembly') label = '早會結束倒計時';
-                
-                document.getElementById('countdown-label').textContent = label;
+
+                this._setText(this._countdownLabelEl, label);
             }
 
             updateScheduleDisplay() {

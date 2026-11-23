@@ -37,15 +37,15 @@ import androidx.glance.wear.WearWidgetDocument
 import androidx.glance.wear.core.ActiveWearWidgetHandle
 import androidx.glance.wear.core.WearWidgetParams
 import com.timetable.wear.MainActivity
-import com.timetable.wear.complications.formatCountdownMinutes
-import com.timetable.wear.complications.isActiveTimedPeriod
-import com.timetable.wear.complications.mergedPeriodBlock
-import com.timetable.wear.complications.parseSubject
-import com.timetable.wear.complications.remainingSecondsFor
-import com.timetable.wear.complications.secondsUntil
-import com.timetable.wear.data.model.PeriodInfo
-import com.timetable.wear.data.model.ScheduleItemType
-import com.timetable.wear.data.model.TimetableType
+import com.timetable.shared.util.formatCountdownMinutes
+import com.timetable.shared.util.isActiveTimedPeriod
+import com.timetable.shared.engine.mergedPeriodBlock
+import com.timetable.shared.util.parseSubject
+import com.timetable.shared.util.remainingSecondsFor
+import com.timetable.shared.util.secondsUntil
+import com.timetable.shared.data.model.PeriodInfo
+import com.timetable.shared.data.model.ScheduleItemType
+import com.timetable.shared.data.model.TimetableType
 import com.timetable.wear.tiles.shortMonthDay
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -107,7 +107,7 @@ class CountdownWidget : GlanceWearWidget() {
     }
 
     private fun buildModel(
-        snapshot: com.timetable.wear.engine.TodaySnapshot,
+        snapshot: com.timetable.shared.engine.TodaySnapshot,
         merge: Boolean,
         params: WearWidgetParams,
         palette: WidgetPalette

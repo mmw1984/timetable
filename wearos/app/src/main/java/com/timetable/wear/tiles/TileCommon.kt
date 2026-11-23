@@ -25,9 +25,9 @@ import androidx.wear.protolayout.material3.textButton
 import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.TileBuilders.Tile
 import com.timetable.wear.MainActivity
-import com.timetable.wear.complications.parseSubject
-import com.timetable.wear.data.model.ScheduleItem
-import com.timetable.wear.data.model.ScheduleItemType
+import com.timetable.shared.util.parseSubject
+import com.timetable.shared.data.model.ScheduleItem
+import com.timetable.shared.data.model.ScheduleItemType
 
 internal fun openAppClickable(): ModifiersBuilders.Clickable =
     ModifiersBuilders.Clickable.Builder()

@@ -4,7 +4,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import com.timetable.wear.engine.HomeScheduleState
+import com.timetable.shared.engine.HomeScheduleState
 import com.timetable.wear.ui.theme.TimetableTheme
 import org.junit.Rule
 import org.junit.Test

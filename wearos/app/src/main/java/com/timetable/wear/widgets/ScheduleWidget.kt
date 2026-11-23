@@ -33,8 +33,8 @@ import androidx.glance.wear.WearWidgetData
 import androidx.glance.wear.WearWidgetDocument
 import androidx.glance.wear.core.ActiveWearWidgetHandle
 import androidx.glance.wear.core.WearWidgetParams
-import com.timetable.wear.complications.parseSubject
-import com.timetable.wear.data.model.ScheduleItem
+import com.timetable.shared.util.parseSubject
+import com.timetable.shared.data.model.ScheduleItem
 import com.timetable.wear.tiles.shortMonthDay
 import com.timetable.wear.tiles.tileGroups
 import com.timetable.wear.tiles.tileRowSplit
@@ -96,7 +96,7 @@ class ScheduleWidget : GlanceWearWidget() {
     }
 
     private fun buildModel(
-        snapshot: com.timetable.wear.engine.TodaySnapshot,
+        snapshot: com.timetable.shared.engine.TodaySnapshot,
         merge: Boolean,
         params: WearWidgetParams,
         palette: WidgetPalette

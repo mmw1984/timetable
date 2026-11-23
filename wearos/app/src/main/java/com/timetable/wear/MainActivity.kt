@@ -22,7 +22,7 @@ import com.timetable.wear.ui.screens.SettingsScreen
 import com.timetable.wear.ui.screens.UrlEditorScreen
 import com.timetable.wear.ui.screens.WeekScreen
 import com.timetable.wear.ui.theme.TimetableTheme
-import com.timetable.wear.engine.TimetableEngine
+import com.timetable.shared.engine.TimetableEngine
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable

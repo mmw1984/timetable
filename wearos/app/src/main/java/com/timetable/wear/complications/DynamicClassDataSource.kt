@@ -10,11 +10,18 @@ import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import com.timetable.wear.MainActivity
-import com.timetable.wear.data.model.TimetableType
-import com.timetable.wear.engine.TimetableEngine
+import com.timetable.shared.data.model.TimetableType
+import com.timetable.shared.engine.TimetableEngine
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import com.timetable.shared.util.parseSubject
+import com.timetable.shared.util.formatMinutes
+import com.timetable.shared.util.formatMmSs
+import com.timetable.shared.util.isActiveTimedPeriod
+import com.timetable.shared.util.remainingSecondsFor
+import com.timetable.shared.util.elapsedSecondsFor
+import com.timetable.shared.util.isSchoolHours
 
 /**
  * 動態 complication：
@@ -35,7 +42,7 @@ class DynamicClassDataSource : AsyncComplicationDataSource() {
             val snapshot = engine.getTodaySnapshot()
             val now = java.time.LocalTime.now()
             val isSchoolDay = snapshot != null && snapshot.timetableType != TimetableType.NONE && snapshot.dayCycle != null
-            val lastEnd = snapshot?.scheduleItems?.filter { it.type == com.timetable.wear.data.model.ScheduleItemType.PERIOD }?.maxOfOrNull { it.end } ?: ""
+            val lastEnd = snapshot?.scheduleItems?.filter { it.type == com.timetable.shared.data.model.ScheduleItemType.PERIOD }?.maxOfOrNull { it.end } ?: ""
             val inSchoolHours = isSchoolDay && isSchoolHours(now, lastEnd)
 
             val data = when {
@@ -113,7 +120,7 @@ class DynamicClassDataSource : AsyncComplicationDataSource() {
         }
     }
 
-    private fun classShortText(snapshot: com.timetable.wear.engine.TodaySnapshot, type: ComplicationType): ComplicationData {
+    private fun classShortText(snapshot: com.timetable.shared.engine.TodaySnapshot, type: ComplicationType): ComplicationData {
         val period = snapshot.currentPeriod
         val remaining = remainingSecondsFor(period.end).coerceAtLeast(0)
         val elapsed = elapsedSecondsFor(period.start).coerceAtLeast(0)
@@ -121,7 +128,7 @@ class DynamicClassDataSource : AsyncComplicationDataSource() {
         val batteryText = formatBatteryText(battery)
 
         val textStr = when (period.type) {
-            com.timetable.wear.data.model.PeriodInfo.PeriodType.PERIOD -> {
+            com.timetable.shared.data.model.PeriodInfo.PeriodType.PERIOD -> {
                 val short = parseSubject(period.subject)
                 when {
                     elapsed < 15 * 60 -> "${formatMinutes(remaining)} $batteryText"

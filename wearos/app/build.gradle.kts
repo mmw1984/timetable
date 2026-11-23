@@ -16,8 +16,8 @@ android {
         applicationId = "com.timetable.wear"
         minSdk = 35
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
     }
 
     buildTypes {
@@ -66,6 +66,8 @@ kotlin {
 }
 
 dependencies {
+    // Shared timetable engine/data (models, repository, fetcher, ViewModels)
+    implementation(project(":core"))
     // Wear Compose Material3
     implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.foundation)
