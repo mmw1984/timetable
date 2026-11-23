@@ -53,17 +53,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return response immediately, revalidate in background
+        // Cache hit - return response immediately, revalidate in background.
+        // waitUntil keeps the worker alive until the write lands, otherwise
+        // the update can be dropped when the browser stops the worker.
         if (response) {
-          fetch(event.request).then((freshResponse) => {
+          const revalidate = fetch(event.request).then((freshResponse) => {
             if (freshResponse && freshResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, freshResponse);
+              return caches.open(CACHE_NAME).then((cache) => {
+                return cache.put(event.request, freshResponse);
               });
             }
           }).catch(() => {
             // Network failed, but we have cached version
           });
+          event.waitUntil(revalidate);
 
           return response;
         }
